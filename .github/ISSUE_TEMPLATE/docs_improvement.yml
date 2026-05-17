@@ -1,0 +1,23 @@
+name: Documentation improvement
+about: Suggest a clearer explanation, missing section, or structural improvement
+labels: ["type: docs", "needs-triage"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or topic
+      placeholder: docs/11_dashboards_reporting.md
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is unclear or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: false

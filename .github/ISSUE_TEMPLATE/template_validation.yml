@@ -1,0 +1,50 @@
+name: Template validation result
+about: Share lab or production validation for trigger expressions, UserParameters, LLD, or template requirements
+labels: ["type: validation", "needs-review"]
+body:
+  - type: dropdown
+    id: validation_level
+    attributes:
+      label: Validation level
+      options:
+        - Lab-tested
+        - Production-tested
+        - Failed validation
+        - Design feedback only
+    validations:
+      required: true
+  - type: input
+    id: zabbix_version
+    attributes:
+      label: Zabbix version
+      placeholder: 7.0.12 / 7.2.x / 7.4.x
+    validations:
+      required: true
+  - type: input
+    id: component
+    attributes:
+      label: Component / example
+      placeholder: examples/triggers/veeam.md, Plant MSSQL for 1C
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment summary
+      description: OS, agent type, monitored system version, relevant integration details. Remove secrets and internal identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: What worked, what failed, what had to be changed?
+    validations:
+      required: true
+  - type: textarea
+    id: sanitized_artifacts
+    attributes:
+      label: Sanitized artifacts
+      description: Optional logs, expressions, item keys, screenshots, or diffs. Do not include secrets.
+    validations:
+      required: false

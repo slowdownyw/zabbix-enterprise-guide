@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Архитектура мониторинга — поток данных</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; font-family: 'Segoe UI', system-ui, Arial, sans-serif; padding: 16px; }
+.wrap { max-width: 1420px; margin: 0 auto; }
+.title { text-align: center; color: #c9d1d9; font-size: 15px; font-weight: 600; letter-spacing: .4px; margin-bottom: 12px; padding-top: 6px; }
+svg { display: block; width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="title">Целевая архитектура мониторинга — поток данных: Источники → Сбор → Ядро → Обработка → Каналы → Реакция → Инцидент → Постмортем</div>
+<svg viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a0" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#455a64"/></marker>
+  <marker id="aR" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ef5350"/></marker>
+  <marker id="aG" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#66bb6a"/></marker>
+  <marker id="aB" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#42a5f5"/></marker>
+  <marker id="aP" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ce93d8"/></marker>
+</defs>
+<rect width="1400" height="900" fill="#0d1117"/>
+
+<!-- LAYER BANDS -->
+<rect x="88" y="38" width="1296" height="85" rx="5" fill="#0a1828" opacity=".8"/>
+<rect x="88" y="151" width="1296" height="85" rx="5" fill="#051510" opacity=".8"/>
+<rect x="88" y="264" width="1296" height="85" rx="5" fill="#110520" opacity=".8"/>
+<rect x="88" y="377" width="1296" height="85" rx="5" fill="#160900" opacity=".8"/>
+<rect x="88" y="490" width="1296" height="85" rx="5" fill="#08080f" opacity=".8"/>
+<rect x="88" y="600" width="1296" height="85" rx="5" fill="#051510" opacity=".8"/>
+<rect x="88" y="710" width="1296" height="88" rx="5" fill="#110520" opacity=".8"/>
+
+<!-- LAYER LABELS -->
+<text transform="rotate(-90,44,80)" x="44" y="80" text-anchor="middle" fill="#1565c0" font-size="8.5" font-weight="700" letter-spacing="1">ИСТОЧНИКИ</text>
+<text transform="rotate(-90,44,193)" x="44" y="193" text-anchor="middle" fill="#2e7d32" font-size="8.5" font-weight="700" letter-spacing="1">СБОР</text>
+<text transform="rotate(-90,44,306)" x="44" y="306" text-anchor="middle" fill="#6a1b9a" font-size="8.5" font-weight="700" letter-spacing="1">ЯДРО</text>
+<text transform="rotate(-90,44,419)" x="44" y="419" text-anchor="middle" fill="#bf360c" font-size="8.5" font-weight="700" letter-spacing="1">ОБРАБОТКА</text>
+<text transform="rotate(-90,44,532)" x="44" y="532" text-anchor="middle" fill="#0277bd" font-size="8.5" font-weight="700" letter-spacing="1">КАНАЛЫ</text>
+<text transform="rotate(-90,44,642)" x="44" y="642" text-anchor="middle" fill="#1b5e20" font-size="8.5" font-weight="700" letter-spacing="1">РЕАКЦИЯ</text>
+<text transform="rotate(-90,44,754)" x="44" y="754" text-anchor="middle" fill="#4a148c" font-size="8.5" font-weight="700" letter-spacing="1">ИНЦИДЕНТ</text>
+
+<!-- ===== L1: SOURCES (y=41, h=79) ===== -->
+<rect x="93" y="41" width="172" height="79" rx="5" fill="#06101d" stroke="#1565c0" stroke-width="1.5"/>
+<text x="179" y="62" text-anchor="middle" fill="#64b5f6" font-size="10.5" font-weight="700">HARDWARE</text>
+<text x="179" y="78" text-anchor="middle" fill="#546e7a" font-size="9">IPMI · iDRAC · iLO</text>
+<text x="179" y="92" text-anchor="middle" fill="#546e7a" font-size="9">SNMP Traps · ИБП</text>
+<text x="179" y="106" text-anchor="middle" fill="#37474f" font-size="8.5">PDU · серверные платформы</text>
+
+<rect x="275" y="41" width="172" height="79" rx="5" fill="#06101d" stroke="#1565c0" stroke-width="1.5"/>
+<text x="361" y="62" text-anchor="middle" fill="#64b5f6" font-size="10.5" font-weight="700">NETWORK</text>
+<text x="361" y="78" text-anchor="middle" fill="#546e7a" font-size="9">Cisco · Eltex · UserGate</text>
+<text x="361" y="92" text-anchor="middle" fill="#546e7a" font-size="9">SNMP v2c/v3</text>
+<text x="361" y="106" text-anchor="middle" fill="#37474f" font-size="8.5">CDP · LLDP · SNMP Traps</text>
+
+<rect x="457" y="41" width="172" height="79" rx="5" fill="#06101d" stroke="#1565c0" stroke-width="1.5"/>
+<text x="543" y="62" text-anchor="middle" fill="#64b5f6" font-size="10.5" font-weight="700">OS / AGENTS</text>
+<text x="543" y="78" text-anchor="middle" fill="#546e7a" font-size="9">Windows · Linux</text>
+<text x="543" y="92" text-anchor="middle" fill="#546e7a" font-size="9">Zabbix Agent Active</text>
+<text x="543" y="106" text-anchor="middle" fill="#37474f" font-size="8.5">CPU · RAM · Disk · Proc</text>
+
+<rect x="639" y="41" width="190" height="79" rx="5" fill="#06101d" stroke="#1565c0" stroke-width="1.5"/>
+<text x="734" y="62" text-anchor="middle" fill="#64b5f6" font-size="10.5" font-weight="700">APPLICATIONS</text>
+<text x="734" y="78" text-anchor="middle" fill="#546e7a" font-size="9">1С · Exchange · MSSQL · PG</text>
+<text x="734" y="92" text-anchor="middle" fill="#546e7a" font-size="9">Agent + UserParameters</text>
+<text x="734" y="106" text-anchor="middle" fill="#37474f" font-size="8.5">ODBC · log items · WMI</text>
+
+<rect x="839" y="41" width="165" height="79" rx="5" fill="#06101d" stroke="#1565c0" stroke-width="1.5"/>
+<text x="921" y="62" text-anchor="middle" fill="#64b5f6" font-size="10.5" font-weight="700">SYNTHETIC</text>
+<text x="921" y="78" text-anchor="middle" fill="#546e7a" font-size="9">Zabbix HTTP Tests</text>
+<text x="921" y="92" text-anchor="middle" fill="#546e7a" font-size="9">e2e сценарии</text>
+<text x="921" y="106" text-anchor="middle" fill="#37474f" font-size="8.5">Login · Send · Receive</text>
+
+<rect x="1014" y="41" width="162" height="79" rx="5" fill="#160500" stroke="#e65100" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="1095" y="62" text-anchor="middle" fill="#ff7043" font-size="10.5" font-weight="700">OT / SCADA</text>
+<text x="1095" y="77" text-anchor="middle" fill="#ef5350" font-size="8.5" font-weight="600">⚠ ТОЛЬКО ПАССИВНО</text>
+<text x="1095" y="92" text-anchor="middle" fill="#546e7a" font-size="9">ICMP · TCP-порт OPC</text>
+<text x="1095" y="106" text-anchor="middle" fill="#37474f" font-size="8.5">MasterScada4D bridge</text>
+
+<rect x="1186" y="41" width="196" height="79" rx="5" fill="#06101d" stroke="#1565c0" stroke-width="1.5"/>
+<text x="1284" y="62" text-anchor="middle" fill="#64b5f6" font-size="10.5" font-weight="700">LOGS / EVENTS</text>
+<text x="1284" y="78" text-anchor="middle" fill="#546e7a" font-size="9">Syslog · WinEvents</text>
+<text x="1284" y="92" text-anchor="middle" fill="#546e7a" font-size="9">Zabbix log items</text>
+<text x="1284" y="106" text-anchor="middle" fill="#37474f" font-size="8.5">SSL cert expiry</text>
+
+<!-- ===== L2: PROXIES (y=154, h=79) ===== -->
+<rect x="93" y="154" width="312" height="79" rx="5" fill="#041208" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="249" y="175" text-anchor="middle" fill="#81c784" font-size="10.5" font-weight="700">ZABBIX PROXY — CORP</text>
+<text x="249" y="191" text-anchor="middle" fill="#546e7a" font-size="9">Корпоративный сегмент</text>
+<text x="249" y="207" text-anchor="middle" fill="#546e7a" font-size="9">Win/Linux агенты · SNMP · IPMI</text>
+<text x="249" y="221" text-anchor="middle" fill="#37474f" font-size="8.5">Active mode · PSK шифрование</text>
+
+<rect x="520" y="154" width="358" height="79" rx="5" fill="#150400" stroke="#e65100" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="699" y="175" text-anchor="middle" fill="#ff8a65" font-size="10.5" font-weight="700">ZABBIX PROXY — OT DMZ</text>
+<text x="699" y="191" text-anchor="middle" fill="#546e7a" font-size="9">Изолированный OT-сегмент</text>
+<text x="699" y="207" text-anchor="middle" fill="#ef5350" font-size="8.5">Только ICMP / TCP — нет агентов внутри SCADA!</text>
+<text x="699" y="221" text-anchor="middle" fill="#37474f" font-size="8.5">Буферизация при разрыве канала</text>
+
+<rect x="993" y="154" width="390" height="79" rx="5" fill="#041208" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="1188" y="175" text-anchor="middle" fill="#81c784" font-size="10.5" font-weight="700">ZABBIX PROXY — REMOTE SITES</text>
+<text x="1188" y="191" text-anchor="middle" fill="#546e7a" font-size="9">Удалённые площадки · склады</text>
+<text x="1188" y="207" text-anchor="middle" fill="#546e7a" font-size="9">Active proxy · локальная буферизация</text>
+<text x="1188" y="221" text-anchor="middle" fill="#37474f" font-size="8.5">Переживает обрыв WAN до ЦОД</text>
+
+<!-- ===== L3: CORE (y=267, h=79) ===== -->
+<rect x="93" y="267" width="548" height="79" rx="5" fill="#0f0224" stroke="#7b1fa2" stroke-width="2"/>
+<text x="367" y="287" text-anchor="middle" fill="#ce93d8" font-size="11.5" font-weight="700">ZABBIX SERVER</text>
+<text x="367" y="304" text-anchor="middle" fill="#546e7a" font-size="9">Event engine · Escalation engine · Media router · LLD processor</text>
+<text x="367" y="319" text-anchor="middle" fill="#546e7a" font-size="9">Auto-registration · Problem correlation · RBAC · REST API v2</text>
+<text x="367" y="334" text-anchor="middle" fill="#37474f" font-size="8.5">HA backend · PSK/TLS шифрование агентов</text>
+
+<rect x="658" y="267" width="726" height="79" rx="5" fill="#0f0224" stroke="#7b1fa2" stroke-width="2"/>
+<text x="1021" y="287" text-anchor="middle" fill="#ce93d8" font-size="11.5" font-weight="700">POSTGRESQL — партиционированная БД</text>
+<text x="1021" y="304" text-anchor="middle" fill="#546e7a" font-size="9">history / history_uint / trends — партиции по месяцам · DROP PARTITION вместо DELETE</text>
+<text x="1021" y="319" text-anchor="middle" fill="#546e7a" font-size="9">Patroni HA · PgBouncer · WAL-G backup · housekeeping отключён</text>
+<text x="1021" y="334" text-anchor="middle" fill="#37474f" font-size="8.5">Grafana Zabbix datasource читает напрямую (read-only user)</text>
+
+<!-- R/W -->
+<line x1="641" y1="305" x2="658" y2="305" stroke="#7b1fa2" stroke-width="1.5" marker-end="url(#aP)"/>
+<line x1="658" y1="317" x2="641" y2="317" stroke="#7b1fa2" stroke-width="1.5" marker-end="url(#aP)"/>
+
+<!-- ===== L4: PROCESSING (y=380, h=79) ===== -->
+<rect x="93" y="380" width="260" height="79" rx="5" fill="#140700" stroke="#e64a19" stroke-width="1.5"/>
+<text x="223" y="401" text-anchor="middle" fill="#ff8a65" font-size="10.5" font-weight="700">TRIGGER EVALUATION</text>
+<text x="223" y="417" text-anchor="middle" fill="#546e7a" font-size="9">Пороги · выражения</text>
+<text x="223" y="432" text-anchor="middle" fill="#546e7a" font-size="9">Hysteresis · периоды</text>
+<text x="223" y="447" text-anchor="middle" fill="#37474f" font-size="8.5">Severity P1..P4</text>
+
+<rect x="366" y="380" width="260" height="79" rx="5" fill="#140700" stroke="#e64a19" stroke-width="1.5"/>
+<text x="496" y="401" text-anchor="middle" fill="#ff8a65" font-size="10.5" font-weight="700">EVENT CORRELATION</text>
+<text x="496" y="417" text-anchor="middle" fill="#546e7a" font-size="9">Объединение событий</text>
+<text x="496" y="432" text-anchor="middle" fill="#546e7a" font-size="9">Дедупликация</text>
+<text x="496" y="447" text-anchor="middle" fill="#37474f" font-size="8.5">Correlation tag rules</text>
+
+<rect x="639" y="380" width="260" height="79" rx="5" fill="#140700" stroke="#e64a19" stroke-width="1.5"/>
+<text x="769" y="401" text-anchor="middle" fill="#ff8a65" font-size="10.5" font-weight="700">DEP. SUPPRESSION</text>
+<text x="769" y="417" text-anchor="middle" fill="#546e7a" font-size="9">Зависимости триггеров</text>
+<text x="769" y="432" text-anchor="middle" fill="#546e7a" font-size="9">Switch down → 1 алерт</text>
+<text x="769" y="447" text-anchor="middle" fill="#37474f" font-size="8.5">Каскадный шум подавлен</text>
+
+<rect x="912" y="380" width="370" height="79" rx="5" fill="#140700" stroke="#e64a19" stroke-width="2"/>
+<text x="1097" y="401" text-anchor="middle" fill="#ff7043" font-size="10.5" font-weight="700">TAG-BASED ROUTING</text>
+<text x="1097" y="417" text-anchor="middle" fill="#546e7a" font-size="9">service · criticality · owner · env</text>
+<text x="1097" y="432" text-anchor="middle" fill="#546e7a" font-size="9">Conditions в Actions → MediaType</text>
+<text x="1097" y="447" text-anchor="middle" fill="#37474f" font-size="8.5">Кому · куда · P1/P2/P3 раздельно</text>
+
+<!-- ===== L5: CHANNELS (y=493, h=79) ===== -->
+<text x="255" y="489" text-anchor="middle" fill="#0288d1" font-size="8" font-weight="700" letter-spacing=".5">▸ ВИЗУАЛИЗАЦИЯ</text>
+<text x="960" y="489" text-anchor="middle" fill="#c62828" font-size="8" font-weight="700" letter-spacing=".5">▸ АКТИВНЫЕ УВЕДОМЛЕНИЯ</text>
+
+<rect x="93" y="493" width="208" height="79" rx="5" fill="#060d1a" stroke="#0288d1" stroke-width="1.5"/>
+<text x="197" y="514" text-anchor="middle" fill="#81d4fa" font-size="10.5" font-weight="700">ZABBIX NOC</text>
+<text x="197" y="530" text-anchor="middle" fill="#546e7a" font-size="9">Оперативный экран</text>
+<text x="197" y="545" text-anchor="middle" fill="#546e7a" font-size="9">Disasters · Active events</text>
+<text x="197" y="560" text-anchor="middle" fill="#37474f" font-size="8.5">TV-панель дежурки 24/7</text>
+
+<rect x="313" y="493" width="208" height="79" rx="5" fill="#060d1a" stroke="#0288d1" stroke-width="1.5"/>
+<text x="417" y="514" text-anchor="middle" fill="#81d4fa" font-size="10.5" font-weight="700">GRAFANA</text>
+<text x="417" y="530" text-anchor="middle" fill="#546e7a" font-size="9">Datasource: Zabbix + PG</text>
+<text x="417" y="545" text-anchor="middle" fill="#546e7a" font-size="9">SLA · тренды · capacity</text>
+<text x="417" y="560" text-anchor="middle" fill="#37474f" font-size="8.5">CIO · тимлид · PDF reports</text>
+
+<line x1="534" y1="490" x2="534" y2="576" stroke="#1c2730" stroke-width="1" stroke-dasharray="3,3"/>
+
+<rect x="546" y="493" width="152" height="79" rx="5" fill="#090408" stroke="#b71c1c" stroke-width="1.5"/>
+<text x="622" y="514" text-anchor="middle" fill="#ef9a9a" font-size="10.5" font-weight="700">TELEGRAM</text>
+<text x="622" y="530" text-anchor="middle" fill="#546e7a" font-size="9">NOC-канал команды</text>
+<text x="622" y="545" text-anchor="middle" fill="#546e7a" font-size="9">High + Average</text>
+<text x="622" y="560" text-anchor="middle" fill="#37474f" font-size="8.5">Bot + ссылка runbook</text>
+
+<rect x="710" y="493" width="152" height="79" rx="5" fill="#090408" stroke="#b71c1c" stroke-width="1.5"/>
+<text x="786" y="514" text-anchor="middle" fill="#ef9a9a" font-size="10.5" font-weight="700">EMAIL</text>
+<text x="786" y="530" text-anchor="middle" fill="#546e7a" font-size="9">Команды · эскалация</text>
+<text x="786" y="545" text-anchor="middle" fill="#546e7a" font-size="9">Average + отчёты</text>
+<text x="786" y="560" text-anchor="middle" fill="#37474f" font-size="8.5">Exchange / SMTP relay</text>
+
+<rect x="874" y="493" width="158" height="79" rx="5" fill="#130000" stroke="#c62828" stroke-width="2"/>
+<text x="953" y="511" text-anchor="middle" fill="#ff1744" font-size="10.5" font-weight="700">SMS / ЗВОНОК</text>
+<text x="953" y="526" text-anchor="middle" fill="#ef5350" font-size="8.5" font-weight="600">⚡ Только P1 Disaster</text>
+<text x="953" y="541" text-anchor="middle" fill="#546e7a" font-size="9">Autodial · дежурный</text>
+<text x="953" y="556" text-anchor="middle" fill="#37474f" font-size="8.5">Escalation 15→30→60 мин</text>
+
+<rect x="1044" y="493" width="172" height="79" rx="5" fill="#090408" stroke="#b71c1c" stroke-width="1.5"/>
+<text x="1130" y="514" text-anchor="middle" fill="#ef9a9a" font-size="10.5" font-weight="700">WEBHOOK</text>
+<text x="1130" y="530" text-anchor="middle" fill="#546e7a" font-size="9">JS MediaType → REST API</text>
+<text x="1130" y="545" text-anchor="middle" fill="#546e7a" font-size="9">High+ → ServiceDesk</text>
+<text x="1130" y="560" text-anchor="middle" fill="#37474f" font-size="8.5">Тег owner → assignee</text>
+
+<rect x="1228" y="493" width="154" height="79" rx="5" fill="#060d1a" stroke="#0277bd" stroke-width="1.5"/>
+<text x="1305" y="514" text-anchor="middle" fill="#81d4fa" font-size="10.5" font-weight="700">AUTO REPORTS</text>
+<text x="1305" y="530" text-anchor="middle" fill="#546e7a" font-size="9">Grafana → PDF → Email</text>
+<text x="1305" y="545" text-anchor="middle" fill="#546e7a" font-size="9">SLA за месяц · cron</text>
+<text x="1305" y="560" text-anchor="middle" fill="#37474f" font-size="8.5">CIO · руководство завода</text>
+
+<!-- ===== L6: DOWNSTREAM (y=603, h=79) ===== -->
+<rect x="93" y="603" width="272" height="79" rx="5" fill="#041208" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="229" y="624" text-anchor="middle" fill="#a5d6a7" font-size="10.5" font-weight="700">SERVICE DESK</text>
+<text x="229" y="640" text-anchor="middle" fill="#546e7a" font-size="9">Naumen · GLPI</text>
+<text x="229" y="655" text-anchor="middle" fill="#546e7a" font-size="9">Тикет · SLA таймер · owner</text>
+<text x="229" y="670" text-anchor="middle" fill="#37474f" font-size="8.5">Auto-close при resolve</text>
+
+<rect x="378" y="603" width="272" height="79" rx="5" fill="#041208" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="514" y="624" text-anchor="middle" fill="#a5d6a7" font-size="10.5" font-weight="700">RUNBOOKS</text>
+<text x="514" y="640" text-anchor="middle" fill="#546e7a" font-size="9">Bookstack / Confluence</text>
+<text x="514" y="655" text-anchor="middle" fill="#546e7a" font-size="9">Ссылка из каждого алерта</text>
+<text x="514" y="670" text-anchor="middle" fill="#37474f" font-size="8.5">Disaster → runbook обязателен</text>
+
+<rect x="663" y="603" width="252" height="79" rx="5" fill="#041208" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="789" y="624" text-anchor="middle" fill="#a5d6a7" font-size="10.5" font-weight="700">ON-CALL ROSTER</text>
+<text x="789" y="640" text-anchor="middle" fill="#546e7a" font-size="9">Расписание дежурств</text>
+<text x="789" y="655" text-anchor="middle" fill="#546e7a" font-size="9">Rotation · Grafana OnCall</text>
+<text x="789" y="670" text-anchor="middle" fill="#37474f" font-size="8.5">Кто дежурит прямо сейчас</text>
+
+<rect x="928" y="603" width="252" height="79" rx="5" fill="#041208" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="1054" y="624" text-anchor="middle" fill="#a5d6a7" font-size="10.5" font-weight="700">ЭСКАЛАЦИЯ</text>
+<text x="1054" y="640" text-anchor="middle" fill="#546e7a" font-size="9">L1 → L2 → CIO</text>
+<text x="1054" y="655" text-anchor="middle" fill="#546e7a" font-size="9">Actions + таймеры Zabbix</text>
+<text x="1054" y="670" text-anchor="middle" fill="#37474f" font-size="8.5">P1: 15 → 30 → 60 мин</text>
+
+<rect x="1193" y="603" width="189" height="79" rx="5" fill="#041208" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="1287" y="624" text-anchor="middle" fill="#a5d6a7" font-size="10.5" font-weight="700">AUDIT / GIT</text>
+<text x="1287" y="640" text-anchor="middle" fill="#546e7a" font-size="9">Config auto-export</text>
+<text x="1287" y="655" text-anchor="middle" fill="#546e7a" font-size="9">Drift detection alert</text>
+<text x="1287" y="670" text-anchor="middle" fill="#37474f" font-size="8.5">Ansible apply → Zabbix</text>
+
+<!-- ===== L7: INCIDENT LIFECYCLE (y=713, h=85) ===== -->
+<rect x="93" y="713" width="248" height="83" rx="5" fill="#0d0220" stroke="#7b1fa2" stroke-width="1.5"/>
+<text x="217" y="734" text-anchor="middle" fill="#ce93d8" font-size="10.5" font-weight="700">ACKNOWLEDGE</text>
+<text x="217" y="750" text-anchor="middle" fill="#546e7a" font-size="9">Дежурный берёт в работу</text>
+<text x="217" y="765" text-anchor="middle" fill="#546e7a" font-size="9">Комментарий · owner</text>
+<text x="217" y="780" text-anchor="middle" fill="#37474f" font-size="8.5">SLA таймер тикает</text>
+
+<rect x="353" y="713" width="248" height="83" rx="5" fill="#0d0220" stroke="#7b1fa2" stroke-width="1.5"/>
+<text x="477" y="734" text-anchor="middle" fill="#ce93d8" font-size="10.5" font-weight="700">ДИАГНОСТИКА</text>
+<text x="477" y="750" text-anchor="middle" fill="#546e7a" font-size="9">Runbook → шаги</text>
+<text x="477" y="765" text-anchor="middle" fill="#546e7a" font-size="9">Root cause finding</text>
+<text x="477" y="780" text-anchor="middle" fill="#37474f" font-size="8.5">Escalate если нужно</text>
+
+<rect x="613" y="713" width="248" height="83" rx="5" fill="#0d0220" stroke="#7b1fa2" stroke-width="1.5"/>
+<text x="737" y="734" text-anchor="middle" fill="#ce93d8" font-size="10.5" font-weight="700">RESOLVE</text>
+<text x="737" y="750" text-anchor="middle" fill="#546e7a" font-size="9">Фикс · верификация</text>
+<text x="737" y="765" text-anchor="middle" fill="#546e7a" font-size="9">Закрыть тикет в SD</text>
+<text x="737" y="780" text-anchor="middle" fill="#37474f" font-size="8.5">MTTR записан · trigger OK</text>
+
+<rect x="873" y="709" width="509" height="91" rx="6" fill="#1a0032" stroke="#ab47bc" stroke-width="2.5"/>
+<text x="1127" y="731" text-anchor="middle" fill="#e040fb" font-size="12" font-weight="700">POSTMORTEM</text>
+<text x="1127" y="748" text-anchor="middle" fill="#546e7a" font-size="9">Timeline · Root Cause · Impact · What went well / wrong</text>
+<text x="1127" y="763" text-anchor="middle" fill="#546e7a" font-size="9">Blameless · Action Items · Owner per item · Публикация</text>
+<text x="1127" y="780" text-anchor="middle" fill="#66bb6a" font-size="9" font-weight="600">→ Обновить: Runbooks · Шаблоны · Пороги · SLO</text>
+
+<!-- ===== ARROWS ===== -->
+<!-- SOURCES → PROXIES -->
+<line x1="179" y1="120" x2="215" y2="151" stroke="#1d3a5a" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="361" y1="120" x2="280" y2="151" stroke="#1d3a5a" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="543" y1="120" x2="330" y2="151" stroke="#1d3a5a" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="734" y1="120" x2="660" y2="151" stroke="#1d3a5a" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="921" y1="120" x2="740" y2="151" stroke="#1d3a5a" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="1095" y1="120" x2="810" y2="151" stroke="#7a2800" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#a0)"/>
+<line x1="1284" y1="120" x2="1210" y2="151" stroke="#1d3a5a" stroke-width="1.2" marker-end="url(#a0)"/>
+
+<!-- PROXIES → ZABBIX SERVER -->
+<line x1="249" y1="233" x2="310" y2="264" stroke="#3d1a66" stroke-width="1.5" marker-end="url(#aB)"/>
+<line x1="699" y1="233" x2="480" y2="264" stroke="#3d1a66" stroke-width="1.5" marker-end="url(#aB)"/>
+<line x1="1188" y1="233" x2="590" y2="264" stroke="#3d1a66" stroke-width="1.5" marker-end="url(#aB)"/>
+
+<!-- ZABBIX SERVER → PROCESSING -->
+<line x1="220" y1="346" x2="200" y2="377" stroke="#6b2200" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="320" y1="346" x2="400" y2="377" stroke="#6b2200" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="420" y1="346" x2="680" y2="377" stroke="#6b2200" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="520" y1="346" x2="990" y2="377" stroke="#6b2200" stroke-width="1.2" marker-end="url(#a0)"/>
+
+<!-- PROCESSING → CHANNELS (VIZ) -->
+<line x1="223" y1="459" x2="197" y2="490" stroke="#455a64" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="496" y1="459" x2="417" y2="490" stroke="#455a64" stroke-width="1.2" marker-end="url(#a0)"/>
+<!-- TAG ROUTING → ALERT CHANNELS -->
+<line x1="1050" y1="459" x2="700" y2="490" stroke="#8d1515" stroke-width="1.2" marker-end="url(#aR)"/>
+<line x1="1080" y1="459" x2="830" y2="490" stroke="#8d1515" stroke-width="1.2" marker-end="url(#aR)"/>
+<line x1="1100" y1="459" x2="953" y2="490" stroke="#c00000" stroke-width="1.5" marker-end="url(#aR)"/>
+<line x1="1140" y1="459" x2="1110" y2="490" stroke="#8d1515" stroke-width="1.2" marker-end="url(#aR)"/>
+<line x1="1200" y1="459" x2="1305" y2="490" stroke="#0d4a70" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#aB)"/>
+
+<!-- CHANNELS → DOWNSTREAM -->
+<line x1="1130" y1="572" x2="310" y2="600" stroke="#1b5e20" stroke-width="1.5" marker-end="url(#aG)"/>
+<line x1="622" y1="572" x2="514" y2="600" stroke="#1b5e20" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#aG)"/>
+<line x1="953" y1="572" x2="789" y2="600" stroke="#1b5e20" stroke-width="1.2" marker-end="url(#aG)"/>
+<line x1="1080" y1="572" x2="1054" y2="600" stroke="#1b5e20" stroke-width="1.2" marker-end="url(#aG)"/>
+
+<!-- DOWNSTREAM → INCIDENT -->
+<line x1="229" y1="682" x2="217" y2="710" stroke="#5e1a8e" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="514" y1="682" x2="477" y2="710" stroke="#5e1a8e" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="789" y1="682" x2="737" y2="710" stroke="#5e1a8e" stroke-width="1.2" marker-end="url(#a0)"/>
+<line x1="1054" y1="682" x2="1050" y2="710" stroke="#5e1a8e" stroke-width="1.2" marker-end="url(#a0)"/>
+
+<!-- INCIDENT FLOW -->
+<line x1="341" y1="754" x2="353" y2="754" stroke="#9c27b0" stroke-width="2" marker-end="url(#aP)"/>
+<line x1="601" y1="754" x2="613" y2="754" stroke="#9c27b0" stroke-width="2" marker-end="url(#aP)"/>
+<line x1="861" y1="754" x2="873" y2="754" stroke="#ab47bc" stroke-width="2.5" marker-end="url(#aP)"/>
+
+<!-- FEEDBACK: Postmortem → Processing (right side) -->
+<path d="M 1127 800 Q 1378 840 1378 419 Q 1378 380 1282 419" stroke="#3fb950" stroke-width="1.5" fill="none" stroke-dasharray="7,4" marker-end="url(#aG)"/>
+<!-- Feedback label -->
+<text transform="rotate(90,1368,610)" x="1368" y="610" text-anchor="middle" fill="#3fb950" font-size="8" font-weight="600">УЛУЧШЕНИЯ</text>
+<text transform="rotate(90,1380,610)" x="1380" y="610" text-anchor="middle" fill="#2d8040" font-size="7.5">Templates · Thresholds</text>
+
+<!-- FEEDBACK: Postmortem → Runbooks -->
+<path d="M 950 800 Q 950 850 514 850 Q 514 682 514 682" stroke="#3fb950" stroke-width="1" fill="none" stroke-dasharray="5,3" marker-end="url(#aG)"/>
+<text x="730" y="857" text-anchor="middle" fill="#3fb950" font-size="8">→ Обновить Runbooks</text>
+
+<!-- ===== LEGEND ===== -->
+<rect x="93" y="870" width="720" height="24" rx="4" fill="#161b22" opacity=".85"/>
+<line x1="108" y1="882" x2="135" y2="882" stroke="#455a64" stroke-width="1.5" marker-end="url(#a0)"/>
+<text x="143" y="886" fill="#607d8b" font-size="8.5">Основной поток</text>
+<line x1="235" y1="882" x2="262" y2="882" stroke="#ef5350" stroke-width="1.5" marker-end="url(#aR)"/>
+<text x="270" y="886" fill="#607d8b" font-size="8.5">Алертинг</text>
+<line x1="350" y1="882" x2="377" y2="882" stroke="#66bb6a" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#aG)"/>
+<text x="385" y="886" fill="#607d8b" font-size="8.5">Фидбэк / улучшения</text>
+<line x1="505" y1="882" x2="532" y2="882" stroke="#42a5f5" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#aB)"/>
+<text x="540" y="886" fill="#607d8b" font-size="8.5">Косвенная связь</text>
+<rect x="625" y="876" width="38" height="12" rx="3" fill="#160500" stroke="#e65100" stroke-dasharray="4,3"/>
+<text x="671" y="886" fill="#607d8b" font-size="8.5">OT — ограничения</text>
+
+</svg>
+</div>
+</body>
+</html>

@@ -1,0 +1,817 @@
+!!! info "🟡 Статус: Design draft · v0.6"
+    Это операционный playbook внедрения: структура проекта, роли, фазы, phase gates и минимальные артефакты. Он не заменяет детальный проект внедрения, sizing и security review под конкретную среду.
+
+# 16. Implementation Playbook: от дизайна к эксплуатации
+
+Эта глава отвечает на вопрос, который не закрывается одними шаблонами, тегами и дашбордами:
+
+> Как провести внедрение мониторинга как управляемый проект, а не как серию героических правок в Zabbix UI?
+
+В предыдущих главах описано, **как должен выглядеть зрелый дизайн**:
+
+- [глава 3](03_tags_and_groups.md) — теги, группы и метаданные;
+- [глава 5](05_layered_design.md) — layered design: шаблоны, теги и смысл событий;
+- [глава 6](06_architecture.md) — физическая архитектура развёртывания;
+- [глава 9](09_runbooks.md) — runbooks;
+- [глава 10](10_sla_service_catalog.md) — SLA и сервисный каталог;
+- [глава 11](11_dashboards_reporting.md) — дашборды и отчётность;
+- [глава 12](12_operations.md) — эксплуатационные процедуры.
+
+Эта глава связывает их в **порядок внедрения**: кто участвует, какие решения принимаются, какие артефакты должны появиться, где останавливаться и что проверять перед переходом дальше.
+
+---
+
+## Главный принцип playbook
+
+Мониторинг нельзя внедрить только силами инженера, который умеет Zabbix.
+
+Зрелый мониторинг — это пересечение четырёх областей:
+
+```text
+Техническая платформа
+  Zabbix Server, DB, proxies, agents, templates, integrations
+
+Эксплуатационная модель
+  on-call, escalation, maintenance, alert review, runbooks
+
+Сервисная модель
+  service catalog, owners, criticality, SLA/SLO, business impact
+
+Организационная модель
+  роли, права, decision log, change process, handover
+```
+
+Если одна из областей отсутствует, проект обычно деградирует:
+
+| Что отсутствует | Что происходит |
+|---|---|
+| Нет платформенного дизайна | Zabbix тормозит, БД растёт, proxy ставятся хаотично |
+| Нет эксплуатационной модели | Алерты летят в общий чат, их игнорируют |
+| Нет сервисной модели | Есть CPU/диски, но нет ответа «работает ли 1С?» |
+| Нет организационной модели | Непонятно, кто владелец шаблонов, тегов, runbooks и дашбордов |
+
+Поэтому внедрение должно идти не как «настроим триггеры», а как программа перехода от технического мониторинга к управляемой эксплуатации.
+
+---
+
+## Reference 90-day plan — это не универсальная оценка
+
+В книге есть [reference roadmap](07_implementation_roadmap.md) на 3 месяца. Его нельзя читать как обещание, что любой Zabbix-проект делается за 90 дней.
+
+Правильная трактовка:
+
+> 90 дней — это референсный сценарий для среды среднего размера, где Zabbix уже существует, stakeholders доступны, scope ограничен, а команда может принимать решения еженедельно.
+
+Реальные сроки зависят от масштаба среды, зрелости текущего мониторинга, числа площадок, регуляторных ограничений, наличия ITSM/CMDB, готовности владельцев сервисов и объёма alert noise.
+
+### Ориентировочные классы среды
+
+| Класс среды | Примерный масштаб | Типичный срок до управляемого MVP | Комментарий |
+|---|---:|---:|---|
+| **Lab / small** | 20–150 hosts, 1–2 площадки | 4–6 недель | Можно быстро пройти discovery и pilot, но всё равно нужны tag schema и severity model |
+| **Medium** | 200–800 hosts, 2–5 площадок | 8–14 недель | Именно под этот класс подходит reference 90-day roadmap |
+| **Large** | 1000–5000 hosts, много команд | 4–9 месяцев | Нужны прокси, governance, staged rollout, несколько пилотов |
+| **Enterprise / regulated / OT** | 5000+ hosts, КИИ/OT/multi-site | 6–12+ месяцев | Основное время уходит не на Zabbix, а на согласования, безопасность, владельцев и процессы |
+
+### Что сильнее всего растягивает сроки
+
+1. Нет владельцев сервисов.
+2. Нет актуального inventory.
+3. Нет единого источника правды по площадкам и критичности.
+4. В Zabbix тысячи старых триггеров без owner и runbook.
+5. Сетевики/ИБ/АСУ ТП не согласовали границы мониторинга.
+6. Команда спорит о tag schema больше двух недель.
+7. Нет решения: UI-first, export-to-git, Ansible или другой способ управления конфигурацией.
+8. ITSM отсутствует или не готов принимать автоматические инциденты.
+9. Руководство хочет SLA до появления данных хотя бы за 1–3 месяца.
+
+Вывод: сроки надо планировать не только по количеству хостов, а по **скорости принятия решений**.
+
+---
+
+## Где заканчивается design guide и начинается implementation playbook
+
+Design guide отвечает:
+
+```text
+Как правильно устроить модель мониторинга?
+```
+
+Implementation playbook отвечает:
+
+```text
+Как провести людей, решения и артефакты через внедрение?
+```
+
+Пример разницы:
+
+| Тема | Design guide | Implementation playbook |
+|---|---|---|
+| Tag schema | Какие теги нужны и где они живут | Кто утверждает значения, как раскатывать, когда gate пройден |
+| Severity | Что значит Disaster/High/Average | Кто имеет право менять severity, как проверять noise ratio |
+| Runbooks | Как писать runbook | Какие runbooks должны быть готовы до pilot/rollout |
+| Dashboards | Какие витрины нужны | Кто аудитория, кто owner, как принимать dashboard |
+| SLA | Как описать сервис и SLO | Когда можно обсуждать SLA, кто business owner |
+| Templates | Как проектировать composition | Кто меняет шаблоны, где review, как валидировать |
+
+---
+
+## Структура команды внедрения
+
+Внедрение мониторинга ломается, если его воспринимают как задачу одного инженера. Нужна минимальная команда и понятные роли.
+
+### Core team
+
+| Роль | Кто обычно | Ответственность |
+|---|---|---|
+| **Executive sponsor** | CIO / ИТ-директор | Политическая поддержка, приоритизация, снятие блокеров |
+| **Monitoring owner** | Руководитель эксплуатации / SRE lead / тимлид инфраструктуры | Владелец мониторинга как продукта после внедрения |
+| **Monitoring architect** | Ведущий инженер / архитектор | Архитектура, tag schema, severity model, template composition, design decisions |
+| **Zabbix administrator** | Инженер мониторинга | Реализация в Zabbix: хосты, шаблоны, actions, media, proxies |
+| **Platform / DB owner** | Linux/PostgreSQL/VMware команда | Сервер, БД, backup, HA, capacity, OS hardening |
+| **Network owner** | Сетевики | SNMP, routing, firewall rules, proxy placement, network discovery |
+| **Application owners** | 1С, Exchange, MSSQL, Veeam, ERP/CRM команды | Прикладные метрики, критичность, диагностика, runbooks |
+| **NOC / on-call lead** | Дежурная служба / L1 lead | Проверка процесса реакции, escalation, acknowledgement, handover |
+| **Security owner** | ИБ | Доступы, секреты, TLS/PSK, audit, внешние integrations |
+| **OT / SCADA owner** | АСУ ТП / промышленная автоматизация | Границы OT, допустимые проверки, запрет активного вмешательства |
+| **ServiceDesk owner** | ITSM команда | Incident/change workflow, maintenance windows, ticket mapping |
+| **Business service owner** | Владелец бизнес-сервиса | Бизнес-критичность, service hours, acceptance, SLA/SLO |
+
+### Минимальный состав, если людей мало
+
+В небольшой организации роли могут совмещаться:
+
+| Минимальная роль | Может совмещать |
+|---|---|
+| Sponsor | CIO + service owner для ключевых сервисов |
+| Monitoring owner | Monitoring architect + Zabbix administrator |
+| Platform owner | Linux/VM/DB эксплуатация |
+| Network/Security contact | Сетевик + ИБ контакт |
+| Application representatives | 1С/БД/почта хотя бы по одному человеку |
+| On-call representative | Тот, кто реально получает алерты |
+
+Но даже если один человек совмещает три роли, **роли всё равно надо назвать**. Иначе неясно, кто принимает решения.
+
+---
+
+## Что делать, если роли нет
+
+Это обычная ситуация. В зрелом playbook должны быть не только идеальные роли, но и fallback-модель.
+
+| Нет роли | Что делать временно | Что нельзя делать |
+|---|---|---|
+| Нет business service owner | Назначить временного service owner от ИТ | Утверждать SLA от имени бизнеса |
+| Нет NOC / on-call | Маршрутизировать High+ на профильные команды | Делать общий Telegram-чат на всех |
+| Нет CMDB | Вести service catalog и inventory в YAML/Excel | Делать вид, что Zabbix сам является CMDB |
+| Нет ITSM | Фиксировать incidents/changes в Jira/GitHub Issues/таблице | Терять историю реакций и maintenance |
+| Нет Security owner | Использовать read-only доступы, не трогать OT/SCADA | Открывать firewall rules и ставить агенты без согласования |
+| Нет Zabbix administrator | Назначить технического владельца до старта | Разрешить всем менять шаблоны в UI |
+| Нет владельца tag schema | Назначить Monitoring owner как временного владельца | Позволять каждому придумывать свои значения тегов |
+
+Правило:
+
+> Если для решения нет owner — решение не принято, а риск должен быть записан в risk register.
+
+---
+
+## Взаимодействие с отделами
+
+Мониторинг почти всегда задевает чужую территорию. Внедрение будет быстрее, если заранее понимать, что нужно от каждой группы.
+
+### Инфраструктура / серверная команда
+
+Согласовать:
+
+- где живёт Zabbix Server;
+- где живёт БД;
+- кто делает backup Zabbix DB;
+- нужен ли HA;
+- кто отвечает за OS patching;
+- какие storage/IOPS доступны;
+- есть ли отдельные среды test/stage/prod;
+- как мониторить сам Zabbix.
+
+Связанные главы:
+
+- [глава 6 — Архитектура и развёртывание](06_architecture.md)
+- [глава 12 — Эксплуатационная модель мониторинга](12_operations.md)
+
+### Сетевики
+
+Согласовать:
+
+- SNMP policy: v2c или v3;
+- read-only communities / credentials;
+- какие интерфейсы являются uplink/core/access;
+- какие интерфейсы нельзя алармить;
+- LLDP/CDP доступность;
+- firewall rules для agent/proxy/server;
+- proxy placement по площадкам;
+- network maintenance windows.
+
+Критичный вопрос:
+
+> Interface down на access-порту — это алерт или просто событие?
+
+Если это не решить, сеть станет главным источником alert noise.
+
+### DBA / владельцы БД
+
+Согласовать:
+
+- какие инстансы production;
+- какие БД критичны для сервисов;
+- какие метрики БД допустимы;
+- какие SQL-checks можно выполнять и с какой частотой;
+- какие thresholds опасны/шумны;
+- кто пишет runbook для blocking/deadlocks/backup age;
+- какие окна обслуживания БД есть.
+
+Нельзя просто взять SQL из интернета и поставить polling раз в 30 секунд на production MSSQL.
+
+### 1С / application owners
+
+Согласовать:
+
+- какие базы production;
+- какие регламентные операции критичны;
+- что для бизнеса считается деградацией;
+- какие фоновые задания важны;
+- где доступен `rac`;
+- от какого пользователя можно выполнять диагностику;
+- где логи 1С;
+- какие периоды frozen: закрытие месяца, зарплата, отчётность.
+
+Правильная формулировка вопроса:
+
+> Не “какие процессы 1С мониторить?”, а “по каким признакам вы понимаете, что пользователи скоро начнут звонить?”
+
+### ИБ
+
+Согласовать:
+
+- кто имеет доступ к Zabbix frontend;
+- какие user groups и permissions допустимы;
+- какие credentials хранятся в Zabbix;
+- нужны ли vault/secret handling policies;
+- TLS/PSK для agents/proxies;
+- audit логирование изменений;
+- ограничения на external webhooks;
+- допустимость Telegram/Email/SMS каналов.
+
+### OT / SCADA / АСУ ТП
+
+Согласовать до любых технических действий:
+
+- где граница IT/OT;
+- можно ли ICMP;
+- можно ли TCP port checks;
+- можно ли ставить proxy в OT-DMZ;
+- можно ли passive discovery/SPAN;
+- какие проверки категорически запрещены;
+- кто утверждает исключения;
+- как оформляется change.
+
+Правило:
+
+> Если OT owner и ИБ не согласовали мониторинг — OT не трогаем. Только документируем blind spot и риск.
+
+### ServiceDesk / ITSM
+
+Согласовать:
+
+- какие Zabbix problems создают incidents;
+- какие остаются только notifications;
+- как маппить severity Zabbix → priority ITSM;
+- кто закрывает ticket;
+- как работает auto-resolve;
+- как создаются maintenance windows из change requests;
+- что делать с flapping events;
+- какие поля обязательны: service, owner, location, component, impact.
+
+### Бизнес-владельцы сервисов
+
+Согласовать:
+
+- что сервис делает для бизнеса;
+- кто пользователи;
+- service hours;
+- критичность;
+- acceptable downtime;
+- frozen periods;
+- что является деградацией;
+- какие отчёты нужны;
+- кому показывать executive dashboard.
+
+С бизнесом нельзя обсуждать `CPU > 90%`. С бизнесом обсуждают: “можно ли проводить документы”, “уходит ли почта”, “доступны ли файлы”, “прошёл ли backup критичных данных”.
+
+---
+
+## Фазы внедрения
+
+Ниже — практический lifecycle. Он совместим с 90-дневным roadmap, но не привязан жёстко к календарю.
+
+```text
+Phase 0 — Mobilization
+Phase 1 — Discovery
+Phase 2 — Design & Standardization
+Phase 3 — Pilot
+Phase 4 — Rollout
+Phase 5 — Handover & Operations
+```
+
+### Phase 0 — Mobilization
+
+Цель: запустить проект так, чтобы он не утонул в неопределённости.
+
+На выходе:
+
+- sponsor назначен;
+- monitoring owner назначен;
+- scope определён;
+- ключевые stakeholders известны;
+- доступы read-only согласованы;
+- способ ведения decisions и backlog выбран;
+- риск “нет владельцев” зафиксирован.
+
+Типовые действия:
+
+1. Провести kickoff.
+2. Зафиксировать цели: visibility, alert hygiene, service dashboards, SLA readiness, handover.
+3. Зафиксировать out of scope: production-ready custom templates, full CMDB, full ITSM automation, OT deep monitoring — если это не входит.
+4. Создать project folder/repo/wiki-space.
+5. Завести decision log.
+6. Завести risk register.
+7. Согласовать календарь workshops.
+
+Decision points:
+
+- Кто владелец мониторинга после проекта?
+- Кто имеет право утверждать tag schema?
+- Кто принимает severity model?
+- Какие сервисы входят в MVP?
+- Что считается успехом первой версии?
+
+### Phase 1 — Discovery
+
+Цель: понять реальное состояние, не меняя production.
+
+Принцип:
+
+> Read-only first. Не чинить, не удалять, не “быстро поправить триггер”. Сначала измерить хаос.
+
+На выходе:
+
+- выгрузка инвентаря;
+- матрица покрытия;
+- список текущих шаблонов;
+- список текущих actions и media types;
+- отчёт по шумным триггерам;
+- отчёт по игнорируемым проблемам;
+- карта стейкхолдеров;
+- черновик сервисного каталога;
+- реестр рисков;
+- первый отчёт для CIO (one-pager).
+
+Что собрать из Zabbix:
+
+- hosts, groups, templates, tags;
+- active problems;
+- problem age;
+- events за 30/90 дней;
+- top noisy triggers;
+- disabled hosts/items/triggers;
+- actions and media types;
+- users/user groups;
+- proxies;
+- web scenarios;
+- current maintenance windows.
+
+Что собрать вне Zabbix:
+
+- vCenter/Hyper-V inventory;
+- AD computers;
+- DHCP leases;
+- DNS zones;
+- Veeam protected workloads;
+- network devices;
+- списки бизнес-сервисов;
+- pain log от команд.
+
+Discovery не должен пытаться доказать, что Zabbix плохой. Он должен показать:
+
+```text
+Что видно
+Что не видно
+Что видно неправильно
+Что шумит
+Что никто не обслуживает
+Какие решения надо принять
+```
+
+### Phase 2 — Design & Standardization
+
+Цель: утвердить модель, по которой дальше будет жить мониторинг.
+
+Это самая важная фаза. Если её пропустить, rollout просто размножит старый хаос.
+
+На выходе:
+
+- утверждённая tag schema;
+- модель host groups;
+- severity model;
+- модель template composition;
+- соглашения об именовании;
+- политика maintenance windows;
+- политика покрытия runbook'ами;
+- аудитории дашбордов;
+- первоначальный сервисный каталог;
+- decision log с принятыми ADR.
+
+Ключевые решения:
+
+1. Какие mandatory tags используются?
+2. Где живёт `service`: host, service catalog, trigger exceptions?
+3. Что такое `criticality=P1/P2/P3/P4`?
+4. Что значит Disaster?
+5. Какие alerts уходят в active notification, а какие только в dashboard?
+6. Как проектируются templates: base/role/application/synthetic?
+7. Кто имеет право менять templates?
+8. Как сохраняется история изменений: UI, export-to-git, Ansible, hybrid?
+9. Какие dashboards нужны в MVP?
+10. Какие services входят в MVP SLA-readiness?
+
+Связанные главы:
+
+- [глава 3 — Теги и группы](03_tags_and_groups.md)
+- [глава 5 — Многоуровневый дизайн](05_layered_design.md)
+- [глава 8 — GitOps для Zabbix](08_gitops_for_zabbix.md)
+
+### Phase 3 — Pilot
+
+Цель: проверить модель на ограниченном scope, до массового rollout.
+
+Пилот должен быть достаточно маленьким, чтобы его можно было контролировать, и достаточно реальным, чтобы вскрыть проблемы.
+
+Типичный pilot scope:
+
+- 20–50 hosts;
+- 2–4 business services;
+- 2–3 команды эксплуатации;
+- 1–2 интеграции notifications;
+- 5–10 High/Disaster runbooks;
+- один NOC dashboard;
+- один per-service dashboard.
+
+Хороший пилот включает разные типы объектов:
+
+- Windows host;
+- Linux host;
+- network device;
+- database;
+- application host;
+- backup check;
+- synthetic check.
+
+На выходе:
+
+- теги применены;
+- шаблоны подключены;
+- маршрутизация алертов проверена;
+- runbooks привязаны;
+- дашборды проверены;
+- уровень шума измерен до/после;
+- результаты пилота задокументированы;
+- корректировки зафиксированы.
+
+Pilot не считается завершённым, если:
+
+- alerts уходят неизвестно кому;
+- NOC не понимает, что делать;
+- High/Disaster без runbook;
+- service dashboard показывает CPU, но не показывает состояние сервиса;
+- tag schema пришлось менять вручную для каждого dashboard.
+
+### Phase 4 — Rollout
+
+Цель: масштабировать утверждённую модель на согласованный scope.
+
+Rollout делается волнами:
+
+```text
+Волна 1 — критичные сервисы / P1
+Волна 2 — инфраструктурный каркас
+Волна 3 — прикладные сервисы
+Волна 4 — остальные production-хосты
+Волна 5 — test/dev/dr при необходимости
+```
+
+Для каждой волны:
+
+1. Подготовить список hosts/services.
+2. Проверить owner и criticality.
+3. Применить tags.
+4. Привязать templates.
+5. Проверить problems.
+6. Настроить routing.
+7. Проверить dashboards.
+8. Обновить service catalog.
+9. Зафиксировать exceptions.
+
+Rollout не должен быть Big Bang. Чем больше среда, тем меньше должна быть первая волна.
+
+### Phase 5 — Handover & Operations
+
+Цель: передать систему в штатную эксплуатацию.
+
+Handover — это не презентация. Это доказательство, что команда может работать без автора внедрения.
+
+На выходе:
+
+- owners назначены;
+- регулярный alert review запущен;
+- change process для templates описан;
+- onboarding нового хоста описан;
+- runbook coverage измеряется;
+- dashboards имеют owners;
+- SLA reports имеют owners;
+- postmortem process описан;
+- backlog после проекта передан.
+
+Команда должна уметь:
+
+- добавить новый host;
+- назначить tags;
+- выбрать templates;
+- создать maintenance window;
+- разобрать problem event;
+- открыть runbook;
+- изменить trigger через process;
+- найти owner сервиса;
+- понять, почему alert не ушёл;
+- обновить dashboard;
+- провести weekly alert review.
+
+---
+
+## Decision points
+
+Внедрение мониторинга требует явных архитектурных и операционных решений. Их нельзя оставлять в переписке.
+
+Минимальный формат — ADR: Architecture Decision Record.
+
+### Architecture decisions
+
+| ID | Решение | Когда принять |
+|---|---|---|
+| ADR-001 | Zabbix deployment model: standalone / HA / managed DB | Phase 0–1 |
+| ADR-002 | PostgreSQL model: standalone / HA / existing DB platform | Phase 0–1 |
+| ADR-003 | Proxy topology: где нужны proxies | Phase 1–2 |
+| ADR-004 | Agent mode: active / passive / mixed | Phase 2 |
+| ADR-005 | Encryption: PSK/TLS policy | Phase 2 |
+| ADR-006 | OT/SCADA monitoring boundary | До любых OT-checks |
+| ADR-007 | Grafana: now / later / not needed | Phase 2 |
+| ADR-008 | ITSM integration scope | Phase 2–3 |
+
+### Design decisions
+
+| ID | Решение | Связанная глава |
+|---|---|---|
+| ADR-010 | Mandatory tag schema | [03](03_tags_and_groups.md) |
+| ADR-011 | Host group hierarchy | [03](03_tags_and_groups.md) |
+| ADR-012 | Severity model | [02](02_severity_model.md) |
+| ADR-013 | Naming conventions | [05](05_layered_design.md) |
+| ADR-014 | Template composition model | [05](05_layered_design.md) |
+| ADR-015 | LLD policy | [04](04_lld_and_prototypes.md) |
+| ADR-016 | Maintenance windows policy | [12](12_operations.md) |
+| ADR-017 | Runbook coverage policy | [09](09_runbooks.md) |
+| ADR-018 | Dashboard audiences | [11](11_dashboards_reporting.md) |
+| ADR-019 | SLA/SLO model | [10](10_sla_service_catalog.md) |
+
+### Operational decisions
+
+| ID | Решение |
+|---|---|
+| ADR-020 | Кто владелец мониторинга после проекта |
+| ADR-021 | Кто имеет право менять templates |
+| ADR-022 | Можно ли менять Zabbix через UI |
+| ADR-023 | Как фиксировать drift |
+| ADR-024 | Кто отвечает за noisy alerts |
+| ADR-025 | Как проходит weekly alert review |
+| ADR-026 | Как onboard'ится новый host |
+| ADR-027 | Как decommission'ится старый host |
+| ADR-028 | Как создаются maintenance windows |
+| ADR-029 | Какие alerts создают ITSM tickets |
+
+
+---
+
+## Sizing и capacity: где это место в playbook
+
+Подробный sizing — отдельная работа. Но в playbook должно быть ясно, **когда** он появляется.
+
+Sizing нельзя делать после rollout. Его надо начинать в Phase 0–1 и утвердить до Phase 3.
+
+Минимальные вопросы sizing baseline:
+
+- сколько hosts сейчас;
+- сколько hosts через 12–24 месяца;
+- сколько items примерно на host;
+- сколько NVPS;
+- какой history retention;
+- какой trends retention;
+- сколько web scenarios;
+- сколько LLD-created entities;
+- сколько proxies;
+- сколько preprocessing;
+- сколько users/dashboards/reports;
+- какие требования к HA;
+- какие требования к backup/restore Zabbix;
+- где bottleneck: CPU, DB, disk I/O, network, frontend.
+
+Официальная документация Zabbix подчёркивает, что hardware examples — это стартовая точка, а каждая инсталляция уникальна и требует benchmark в staging/development перед production:
+
+- Zabbix requirements: https://www.zabbix.com/documentation/current/en/manual/installation/requirements
+- Zabbix server concepts: https://www.zabbix.com/documentation/current/en/manual/concepts/server
+- Zabbix proxy concepts: https://www.zabbix.com/documentation/current/en/manual/concepts/proxy
+
+Sizing calculator в объём этой главы не входит. Фиксируем только gate:
+
+> До pilot должен быть утверждён sizing baseline. До rollout должен быть проведён хотя бы минимальный performance sanity check.
+
+Подробные файлы для следующей итерации:
+
+```text
+examples/project/sizing-questionnaire.md
+examples/project/sizing-baseline.md
+examples/decisions/adr-005-retention-and-sizing-baseline.md
+```
+
+---
+
+## Phase gates
+
+Phase gate — это контрольная точка. Она не бюрократия ради бюрократии, а защита от ситуации “пошли дальше, хотя базовые решения не приняты”.
+
+Краткая модель:
+
+| Gate | Когда | Главный вопрос |
+|---|---|---|
+| Gate 0 | До старта | Есть owner, scope и доступы? |
+| Gate 1 | После discovery | Мы понимаем текущий хаос? |
+| Gate 2 | После design | Утверждена модель будущего состояния? |
+| Gate 3 | После pilot | Модель работает на ограниченном scope? |
+| Gate 4 | После rollout | Модель масштабирована и измерима? |
+| Gate 5 | После handover | Команда может жить без автора внедрения? |
+
+Полный чеклист вынесен в `examples/project/phase-gates.md`. В живом репозитории это рабочий артефакт для копирования и адаптации под конкретный проект.
+
+---
+
+## Минимальный viable implementation
+
+Не каждая организация готова сразу сделать ideal enterprise monitoring. Поэтому нужен минимальный viable implementation — такой объём, ниже которого проект лучше не называть внедрением зрелого мониторинга.
+
+Минимум:
+
+1. Есть владелец мониторинга.
+2. Есть agreed tag schema.
+3. Все production hosts имеют mandatory tags.
+4. Severity model утверждена.
+5. Disaster/High имеют понятную маршрутизацию.
+6. Есть хотя бы NOC/current problems dashboard.
+7. Для P1/P2 сервисов есть service catalog draft.
+8. Для Disaster alerts есть runbooks или documented escalation.
+9. Есть maintenance process.
+10. Есть weekly alert review.
+11. Есть backup самого Zabbix.
+12. Есть понятный onboarding нового host.
+
+Если нет хотя бы пунктов 1–5, это не mature monitoring project. Это настройка инструмента.
+
+---
+
+## Типовые ошибки при внедрении
+
+### 1. Начали с шаблонов, не договорившись о тегах
+
+Итог: шаблоны технически работают, но dashboards, actions и reports строятся вручную и расходятся.
+
+Лечение: остановить rollout, утвердить tag schema, провести retagging pilot.
+
+### 2. Сделали dashboards без audience
+
+Итог: красивые экраны, которыми никто не пользуется.
+
+Лечение: каждый dashboard должен иметь audience, owner, refresh rate и действие.
+
+### 3. SLA подписали до измерений
+
+Итог: ИТ взяло обязательства, не понимая baseline.
+
+Лечение: сначала SLO/internal targets, потом 1–3 месяца измерений, потом SLA.
+
+### 4. Все alerts отправили в один канал
+
+Итог: alert fatigue за две недели.
+
+Лечение: routing по service/owner/severity/notification tags.
+
+### 5. OT начали мониторить как обычную сеть
+
+Итог: конфликт с АСУ ТП/ИБ, потенциально опасные проверки.
+
+Лечение: OT только после согласования границ и read-only/passive модели.
+
+### 6. Нет владельца после внедрения
+
+Итог: через 3 месяца всё возвращается в хаос.
+
+Лечение: назначить Monitoring owner в Phase 0, не в конце проекта.
+
+---
+
+## Чеклист приёмки
+
+Проект можно считать переданным в эксплуатацию, если:
+
+- [ ] Monitoring owner назначен.
+- [ ] Tag schema имеет owner и процесс изменения.
+- [ ] Все production hosts в scope имеют mandatory tags.
+- [ ] Severity model утверждена и применена к pilot/rollout scope.
+- [ ] Alert routing работает по tags, а не только по severity.
+- [ ] NOC/on-call понимает, что делать с problem event.
+- [ ] High/Disaster alerts имеют runbook или explicit escalation.
+- [ ] Dashboards имеют owners и audience.
+- [ ] Service catalog draft покрывает P1/P2 сервисы.
+- [ ] Maintenance windows используются.
+- [ ] Weekly alert review запущен.
+- [ ] Zabbix self-monitoring настроен.
+- [ ] Zabbix backup/restore owner назначен.
+- [ ] New host onboarding описан.
+- [ ] Template change process описан.
+- [ ] Backlog после проекта передан владельцу.
+
+Если чеклист не закрыт, проект не завершён. Он просто дошёл до состояния “что-то работает”.
+
+---
+
+
+## Как проводить воркшопы по принятию решений
+
+ADR не должны писаться одним архитектором в одиночку. Хороший decision workshop выглядит так:
+
+1. **До встречи** архитектор готовит контекст, варианты и предварительную рекомендацию.
+2. **На встрече** участники обсуждают не “что красивее”, а последствия: сеть, безопасность, эксплуатация, стоимость, SLA, ownership.
+3. **После встречи** owner фиксирует ADR в статусе `Accepted` или `Proposed` с открытыми вопросами.
+4. **На phase gate** проверяется, какие ADR ещё не закрыты и блокируют ли они следующий этап.
+
+Минимальный состав для разных решений:
+
+| Decision type | Кто нужен |
+|---|---|
+| Deployment model | Monitoring architect, platform owner, DB owner, network, security |
+| Agent mode/encryption | Monitoring architect, network, security, platform |
+| Tag schema | Monitoring owner, NOC, service owners, ServiceDesk |
+| Template composition | Monitoring architect, Zabbix admin, application/platform owners |
+| Retention/sizing | Platform/DB owner, monitoring owner, sponsor if budget impact |
+| Dashboards | NOC lead, service owners, CIO representative, Grafana owner |
+| GitOps/change control | Monitoring owner, Zabbix admin, operations lead, security |
+
+Правило: если на встрече нет команды, которая потом будет жить с последствиями решения, решение преждевременно.
+
+## Связанные project artifacts
+
+Для применения этой главы в реальном проекте см.:
+
+- `examples/project/raci-matrix.md` — роли и ответственность;
+- `examples/project/phase-gates.md` — gates и acceptance criteria;
+- `examples/project/implementation-checklist.md` — пошаговый чеклист внедрения;
+- `examples/project/decision-log.md` — журнал принятых и предлагаемых решений;
+- `examples/decisions/README.md` — процесс ADR и каталог типовых решений;
+- `examples/decisions/adr-template.md` — шаблон Architecture Decision Record;
+- `examples/decisions/adr-001..007` — примеры решений по deployment model, agent mode, tag schema, template composition, retention/sizing, dashboards и GitOps.
+
+Следующая итерация может добавить:
+
+- `examples/project/sizing-questionnaire.md`;
+- `examples/project/risk-register.md`;
+- `examples/project/workshop-plan.md`.
+
+---
+
+## Резюме
+
+Зрелый мониторинг внедряется не через “настроить Zabbix”, а через управляемую последовательность:
+
+```text
+Roles → Discovery → Decisions → Design → Pilot → Rollout → Handover → Review
+```
+
+Техническая реализация важна, но она вторична относительно трёх вещей:
+
+1. кто владеет мониторингом;
+2. какие решения приняты и зафиксированы;
+3. может ли команда эксплуатировать систему без автора внедрения.
+
+Если эти три вещи есть — Zabbix можно развивать. Если их нет — даже хороший Zabbix постепенно превратится в кладбище шаблонов, красных лампочек и забытых исключений.

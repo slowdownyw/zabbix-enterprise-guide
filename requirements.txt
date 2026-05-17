@@ -1,0 +1,12 @@
+# Pinned dependencies for reproducible MkDocs builds.
+# Used by .github/workflows/pages.yml and local development.
+#
+# To upgrade:
+#   1. pip install --upgrade mkdocs-material pymdown-extensions
+#   2. pip freeze | grep -E "mkdocs|pymdown" >> requirements.txt
+#   3. Test locally: mkdocs build --strict
+#   4. Commit.
+
+mkdocs-material==9.5.49
+pymdown-extensions==10.14.3
+Pygments==2.19.2

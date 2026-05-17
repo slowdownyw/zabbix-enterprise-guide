@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Архитектура мониторинга: операционные слои</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #111827;
+      --panel-2: #0f172a;
+      --line: #263244;
+      --text: #e5edf7;
+      --muted: #91a0b4;
+      --soft: #5f6f85;
+      --blue: #4a9eff;
+      --violet: #a78bfa;
+      --amber: #f59e0b;
+      --red: #f87171;
+      --green: #34d399;
+      --orange: #fb923c;
+      --cyan: #22d3ee;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", system-ui, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    main {
+      min-height: 100vh;
+      padding: 22px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+    }
+
+    .eyebrow {
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 6px 0 4px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layer-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(150px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .layer {
+      min-height: 116px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      background: var(--panel-2);
+      color: inherit;
+      cursor: pointer;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .layer:hover,
+    .layer:focus-visible,
+    .layer.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 11%, var(--panel-2));
+      outline: none;
+    }
+
+    .layer-number {
+      color: var(--accent);
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .layer-title {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .layer-subtitle {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+    }
+
+    .details {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      margin-bottom: 16px;
+      padding: 16px;
+    }
+
+    .details h2,
+    .flow h2,
+    .breaks h2 {
+      color: var(--accent, var(--text));
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      margin: 0 0 12px;
+      text-transform: uppercase;
+    }
+
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 8px;
+    }
+
+    .component,
+    .flow-step,
+    .break-card {
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #0b1221;
+      padding: 10px 12px;
+    }
+
+    .component strong,
+    .break-card strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .component span,
+    .break-card span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .flow,
+    .breaks {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      margin-top: 16px;
+      padding: 16px;
+    }
+
+    .flow-list {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      list-style: none;
+    }
+
+    .flow-step b {
+      color: var(--amber);
+      font-size: 12px;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+    }
+
+    .break-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 8px;
+    }
+
+    @media (max-width: 1180px) {
+      .layer-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+      .component-grid,
+      .break-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      main { padding: 14px; }
+      .layer-grid,
+      .component-grid,
+      .break-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">Operational monitoring framework</div>
+      <h1>Архитектура мониторинга как операционная модель</h1>
+      <p class="lead">Нажмите на слой, чтобы увидеть его состав. Диаграмма отвечает на вопрос: что должно существовать вокруг Zabbix, чтобы событие превращалось в управляемое действие.</p>
+    </header>
+
+    <section class="layer-grid" aria-label="Слои архитектуры мониторинга">
+      <button class="layer active" style="--accent: var(--blue)" data-layer="infra">
+        <span class="layer-number">01</span>
+        <span class="layer-title">Инфраструктура</span>
+        <span class="layer-subtitle">Что мониторим</span>
+      </button>
+      <button class="layer" style="--accent: var(--violet)" data-layer="collect">
+        <span class="layer-number">02</span>
+        <span class="layer-title">Сбор данных</span>
+        <span class="layer-subtitle">Как получаем метрики</span>
+      </button>
+      <button class="layer" style="--accent: var(--amber)" data-layer="process">
+        <span class="layer-number">03</span>
+        <span class="layer-title">Обработка</span>
+        <span class="layer-subtitle">Как событие получает смысл</span>
+      </button>
+      <button class="layer" style="--accent: var(--red)" data-layer="alert">
+        <span class="layer-number">04</span>
+        <span class="layer-title">Алертинг</span>
+        <span class="layer-subtitle">Кто, куда, когда</span>
+      </button>
+      <button class="layer" style="--accent: var(--green)" data-layer="response">
+        <span class="layer-number">05</span>
+        <span class="layer-title">Реагирование</span>
+        <span class="layer-subtitle">Runbooks и процессы</span>
+      </button>
+      <button class="layer" style="--accent: var(--orange)" data-layer="sla">
+        <span class="layer-number">06</span>
+        <span class="layer-title">SLA и отчеты</span>
+        <span class="layer-subtitle">Что измеряем после факта</span>
+      </button>
+      <button class="layer" style="--accent: var(--cyan)" data-layer="dash">
+        <span class="layer-number">07</span>
+        <span class="layer-title">Дашборды</span>
+        <span class="layer-subtitle">Три аудитории</span>
+      </button>
+    </section>
+
+    <section class="details" id="details" style="--accent: var(--blue)" aria-live="polite"></section>
+
+    <section class="flow">
+      <h2>Пример сквозного потока инцидента</h2>
+      <ol class="flow-list">
+        <li class="flow-step"><b>01</b><span>Сбой на сервере → Zabbix Agent → триггер Disaster.</span></li>
+        <li class="flow-step"><b>02</b><span>Триггер → Telegram дежурному + автоматический тикет в Service Desk.</span></li>
+        <li class="flow-step"><b>03</b><span>Дежурный открывает тикет и видит ссылку на runbook прямо в событии.</span></li>
+        <li class="flow-step"><b>04</b><span>Runbook задает шаги диагностики, команды проверки и порядок эскалации.</span></li>
+        <li class="flow-step"><b>05</b><span>Инцидент закрыт → время восстановления попадает в SLA-метрику.</span></li>
+        <li class="flow-step"><b>06</b><span>Повторы за месяц → Problem Management и улучшение шаблонов.</span></li>
+      </ol>
+    </section>
+
+    <section class="breaks">
+      <h2>Что ломается без слоя</h2>
+      <div class="break-grid">
+        <div class="break-card"><strong>Без runbooks</strong><span>Дежурный решает по памяти. Ушел инженер — ушло знание.</span></div>
+        <div class="break-card"><strong>Без SLA</strong><span>Индикатор зеленый, но никто не понимает, что именно означает “зеленый”.</span></div>
+        <div class="break-card"><strong>Без матрицы эскалации</strong><span>Алерт улетел в канал, но никто не взял инцидент в работу.</span></div>
+        <div class="break-card"><strong>Без корреляции</strong><span>Один отказ порождает десятки событий и быстро приводит к alert fatigue.</span></div>
+        <div class="break-card"><strong>Без maintenance windows</strong><span>Плановые работы превращаются в ночной шторм ложных алертов.</span></div>
+        <div class="break-card"><strong>Без problem management</strong><span>Одна и та же причина чинится каждую неделю как новая авария.</span></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const layers = {
+      infra: {
+        accent: "var(--blue)",
+        title: "01 / Инфраструктура",
+        items: [
+          ["Серверы Windows/Linux", "CPU, RAM, Disk, процессы, службы"],
+          ["Сеть Cisco/Eltex/UserGate", "Интерфейсы, VLAN, DHCP-пулы, туннели"],
+          ["Виртуализация VMware/KVM", "Хосты, datastore, кластеры, снапшоты"],
+          ["Базы данных MSSQL/PostgreSQL", "Locks, connections, WAL lag, tempdb"],
+          ["1С и приложения", "Сессии, фоновые задания, очереди"],
+          ["SCADA / OT", "Пассивные проверки, OPC-bridge, статус контроллеров"],
+          ["ИБ и AD", "Авторизации, политики, события безопасности"]
+        ]
+      },
+      collect: {
+        accent: "var(--violet)",
+        title: "02 / Сбор данных",
+        items: [
+          ["Zabbix Agent 2", "Активный и пассивный режимы"],
+          ["SNMP v2c/v3", "Сетевое оборудование, UPS, PDU"],
+          ["JMX / ODBC", "Java-приложения и базы данных"],
+          ["HTTP checks", "REST API, web forms, synthetic probes"],
+          ["IPMI / iLO / iDRAC", "Железо: питание, температуры, RAID"],
+          ["Log items / logrt", "Журналы приложений, Linux и Windows events"]
+        ]
+      },
+      process: {
+        accent: "var(--amber)",
+        title: "03 / Обработка событий",
+        items: [
+          ["Фильтрация шума", "Информационные события не превращаются в инциденты"],
+          ["Корреляция", "Связанные симптомы собираются в одну картину"],
+          ["Severity mapping", "Info → Warning → High → Disaster"],
+          ["Maintenance windows", "Плановые работы не создают ложные инциденты"],
+          ["Зависимости", "Падение коммутатора не рождает сорок алертов"],
+          ["Trending и прогноз", "Риск исчерпания ресурсов виден заранее"]
+        ]
+      },
+      alert: {
+        accent: "var(--red)",
+        title: "04 / Алертинг",
+        items: [
+          ["Telegram / Signal", "Мгновенный канал для дежурного"],
+          ["Email", "Команды и тимлиды по расписанию и severity"],
+          ["SMS / звонок", "Только P1/Disaster и эскалации"],
+          ["ITSM ticket", "Автоматическое создание инцидента"],
+          ["Матрица эскалации", "L1 → L2 → L3 → руководство"]
+        ]
+      },
+      response: {
+        accent: "var(--green)",
+        title: "05 / Реагирование",
+        items: [
+          ["Runbook в триггере", "Ссылка прямо в событии или тексте алерта"],
+          ["Диагностические шаги", "Что проверить, какие команды выполнить"],
+          ["Контакты", "Кому звонить, чей сервис, чья ответственность"],
+          ["Known errors", "База известных проблем и workaround"],
+          ["Change management", "Изменения идут через RFC, не в бою"],
+          ["Postmortem", "После Major Incident появляется улучшение"]
+        ]
+      },
+      sla: {
+        accent: "var(--orange)",
+        title: "06 / SLA и отчетность",
+        items: [
+          ["Internal SLA по сервисам", "Например, доступность 1С в рабочее время"],
+          ["MTTR / MTBF", "Время восстановления и интервалы между сбоями"],
+          ["Top incidents", "Что ломается чаще всего → Problem Management"],
+          ["Capacity trends", "Прогноз по дискам, CPU, лицензиям"],
+          ["Weekly / monthly reports", "Отчеты для IT-менеджера и руководства"]
+        ]
+      },
+      dash: {
+        accent: "var(--cyan)",
+        title: "07 / Дашборды",
+        items: [
+          ["NOC / дежурный", "Активные проблемы и технические метрики"],
+          ["IT-менеджер", "Тренды, SLA, повторяемость проблем"],
+          ["Руководство", "Светофоры по сервисам без технической детализации"]
+        ]
+      }
+    };
+
+    const details = document.querySelector("#details");
+    const buttons = [...document.querySelectorAll(".layer")];
+
+    function render(layerId) {
+      const layer = layers[layerId];
+      details.style.setProperty("--accent", layer.accent);
+      details.innerHTML = `
+        <h2>${layer.title} // детализация</h2>
+        <div class="component-grid">
+          ${layer.items.map(([name, detail]) => `
+            <div class="component">
+              <strong>${name}</strong>
+              <span>${detail}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      buttons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.layer === layerId);
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => render(button.dataset.layer));
+    });
+
+    render("infra");
+  </script>
+</body>
+</html>

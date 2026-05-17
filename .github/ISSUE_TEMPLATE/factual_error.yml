@@ -1,0 +1,36 @@
+name: Factual error
+about: Report an incorrect statement, broken recommendation, or outdated fact
+labels: ["type: factual-error", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for improving the guide. Please provide enough context to verify the claim.
+  - type: input
+    id: page
+    attributes:
+      label: Page or file
+      placeholder: docs/03_tags_and_groups.md
+    validations:
+      required: true
+  - type: textarea
+    id: current_text
+    attributes:
+      label: Current statement
+      description: Quote the exact sentence or section that is wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Proposed correction
+      description: What should it say instead?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence / source
+      description: Link to official documentation, lab notes, or production validation details.
+    validations:
+      required: true

@@ -1,0 +1,464 @@
+# Zabbix Enterprise Guide — reference tag schema
+# Status: 🟢 conceptually stable / 🟡 adapt before production
+#
+# Purpose:
+#   A machine-readable starting point for enterprise Zabbix tag governance.
+#   Copy this file, rename values to match your organisation, and treat it as
+#   the source of truth for host tags, trigger tags, dashboard filters,
+#   action routing, SLA reports, and maintenance windows.
+#
+# Notes:
+#   - Keys are lowercase ASCII.
+#   - Values should be lowercase-kebab-case unless the value is a formal ID.
+#   - Do not encode hierarchy in tag values. Use separate tags instead.
+#   - Do not put secrets, personal data, or internal-only comments here.
+
+schema:
+  name: zabbix-enterprise-tag-schema
+  version: 0.5.0
+  status: reference
+  owner: monitoring-team
+  updated: 2026-05-16
+
+naming:
+  key_format: "lowercase_snake_or_lowercase_ascii"
+  value_format: "lowercase-kebab-case"
+  separator: "-"
+  forbidden:
+    - spaces
+    - mixed_case
+    - localized_duplicates
+    - free_text_without_owner
+  examples:
+    good:
+      - service=1c-erp
+      - location=dc-main
+      - owner=it-apps
+    bad:
+      - service=1C ERP
+      - service=ERP_1C
+      - location=Main DC
+
+levels:
+  host:
+    meaning: "who this object is and who owns it"
+    typical_tags:
+      - env
+      - service
+      - owner
+      - criticality
+      - location
+      - segment
+      - os_family
+      - role
+  template:
+    meaning: "class-level conventions inherited by linked hosts/events"
+    typical_tags:
+      - os_family
+      - role
+      - vendor
+  item_or_prototype:
+    meaning: "what is measured"
+    typical_tags:
+      - component
+      - scope
+  trigger_or_trigger_prototype:
+    meaning: "what happened and how to respond"
+    typical_tags:
+      - component
+      - scope
+      - impact
+      - notification
+      - runbook
+  service:
+    meaning: "business-facing service view and SLA aggregation"
+    typical_tags:
+      - service
+      - criticality
+      - sla
+
+mandatory_host_tags:
+  - env
+  - service
+  - owner
+  - criticality
+  - location
+  - segment
+  - os_family
+
+recommended_host_tags:
+  - role
+
+tags:
+  env:
+    level: host
+    required: true
+    description: "Runtime environment. Used by dashboards, alert routing, and maintenance policy."
+    allowed_values:
+      - prod
+      - preprod
+      - test
+      - dev
+      - dr
+      - lab
+    default: prod
+    examples:
+      - env=prod
+      - env=dr
+
+  service:
+    level: host_or_service
+    required: true
+    description: "Business or infrastructure service the object supports."
+    allowed_values:
+      - 1c-erp
+      - exchange
+      - ad-auth
+      - dns
+      - dhcp
+      - file-services
+      - print-services
+      - backup
+      - scada-bridge
+      - network-core
+      - internet-edge
+      - monitoring
+    naming_rule: "Use stable service identifiers, not component names. MSSQL is usually a component; 1c-erp is a service."
+    examples:
+      - service=1c-erp
+      - service=scada-bridge
+
+  owner:
+    level: host
+    required: true
+    description: "Team responsible for first meaningful response."
+    allowed_values:
+      - it-infra
+      - it-apps
+      - dba
+      - network
+      - security
+      - ot-engineering
+      - service-desk
+      - vendor
+    examples:
+      - owner=it-apps
+      - owner=network
+
+  criticality:
+    level: host_or_service
+    required: true
+    description: "Business criticality used for routing, dashboards, and SLA reporting."
+    allowed_values:
+      - P1
+      - P2
+      - P3
+      - P4
+    definitions:
+      P1: "Business-critical. Outage can stop production or block a major business process."
+      P2: "Important. Degradation affects a service but does not fully stop the business."
+      P3: "Operational. Component issue with limited or no direct user impact."
+      P4: "Informational/statistical. No paging; trend and hygiene only."
+    examples:
+      - criticality=P1
+
+  location:
+    level: host
+    required: true
+    description: "Physical or logical site."
+    allowed_values:
+      - dc-main
+      - dc-backup
+      - hq
+      - plant-main
+      - warehouse
+      - workshop-1
+      - workshop-2
+      - cloud
+      - remote-site
+    examples:
+      - location=dc-main
+
+  segment:
+    level: host
+    required: true
+    description: "Security/network segment. Critical for IT/OT separation."
+    allowed_values:
+      - it
+      - ot
+      - ot-dmz
+      - dmz
+      - user-lan
+      - server-lan
+      - management
+      - backup
+      - kii
+      - cloud
+    examples:
+      - segment=it
+      - segment=ot-dmz
+
+  os_family:
+    level: host_or_template
+    required: true
+    description: "Technical OS/device family."
+    allowed_values:
+      - windows
+      - linux
+      - network
+      - firewall
+      - hypervisor
+      - storage
+      - appliance
+      - database
+      - unknown
+    examples:
+      - os_family=windows
+
+  role:
+    level: host_or_role_template
+    required: false
+    description: "Primary technical role of the object. Recommended for automation, dashboards, and template selection, but not part of the seven mandatory host tags."
+    allowed_values:
+      - 1c-app
+      - 1c-cluster-manager
+      - mssql-server
+      - exchange-dag-member
+      - domain-controller
+      - file-server
+      - print-server
+      - veeam-server
+      - veeam-repository
+      - zabbix-server
+      - zabbix-proxy
+      - core-switch
+      - access-switch
+      - firewall
+      - scada-bridge
+      - synthetic-checker
+    examples:
+      - role=1c-app
+
+  component:
+    level: item_or_trigger
+    required: false
+    description: "Specific component that is measured or failed."
+    allowed_values:
+      - cpu
+      - memory
+      - filesystem
+      - network-interface
+      - service
+      - process
+      - rphost
+      - rmngr
+      - hasp
+      - mssql
+      - tempdb
+      - backup-job
+      - backup-repository
+      - exchange-dag
+      - database-copy
+      - synthetic
+      - certificate
+      - zabbix-agent
+      - zabbix-proxy
+    examples:
+      - component=filesystem
+      - component=rphost
+
+  scope:
+    level: item_or_trigger
+    required: false
+    description: "Problem class. Used by dashboards, suppression, and reporting."
+    allowed_values:
+      - availability
+      - performance
+      - capacity
+      - latency
+      - errors
+      - security
+      - backup
+      - recovery
+      - configuration
+      - data-quality
+      - freshness
+      - sla
+    examples:
+      - scope=capacity
+      - scope=availability
+
+  impact:
+    level: trigger
+    required: false
+    description: "Operational meaning of the problem."
+    allowed_values:
+      - outage
+      - service-degradation
+      - user-impact
+      - rpo-risk
+      - rto-risk
+      - data-loss-risk
+      - security-risk
+      - capacity-risk
+      - no-user-impact
+      - hygiene
+    examples:
+      - impact=service-degradation
+      - impact=rpo-risk
+
+  notification:
+    level: trigger
+    required: false
+    description: "Whether the trigger should actively notify or only appear on dashboards/reports."
+    allowed_values:
+      - active
+      - silent
+      - dashboard-only
+      - report-only
+    default: active
+    examples:
+      - notification=active
+
+  runbook:
+    level: trigger
+    required: false
+    description: "Stable runbook identifier. The actual URL should also be stored in trigger URL or description."
+    value_pattern: "^rb-[a-z0-9-]+$"
+    examples:
+      - runbook=rb-1c-rphost-down
+      - runbook=rb-veeam-rpo-breach
+
+  sla:
+    level: service
+    required: false
+    description: "SLA/SLO profile for service-level reporting."
+    allowed_values:
+      - 24x7
+      - business-hours
+      - extended-hours
+      - none
+    examples:
+      - sla=business-hours
+
+  backup:
+    level: host
+    required: false
+    description: "Backup policy applied to the host or service component."
+    allowed_values:
+      - daily
+      - weekly
+      - monthly
+      - none
+      - inherited
+    examples:
+      - backup=daily
+
+  pii:
+    level: host_or_service
+    required: false
+    description: "Personal data context. Adapt to local regulation and internal policy."
+    allowed_values:
+      - yes
+      - no
+      - unknown
+    examples:
+      - pii=yes
+
+  kii:
+    level: host_or_service
+    required: false
+    description: "Critical information infrastructure context. Adapt to local regulation and internal policy."
+    allowed_values:
+      - yes
+      - no
+      - unknown
+    examples:
+      - kii=no
+
+  purdue:
+    level: host
+    required: false
+    description: "Purdue model level for OT environments."
+    allowed_values:
+      - level0
+      - level1
+      - level2
+      - level3
+      - level3-5
+      - level4
+      - level5
+      - not-applicable
+    examples:
+      - purdue=level3-5
+
+  vendor:
+    level: template_or_host
+    required: false
+    description: "Vendor/platform for template routing and inventory grouping."
+    allowed_values:
+      - microsoft
+      - linux
+      - zabbix
+      - veeam
+      - cisco
+      - eltex
+      - usergate
+      - vmware
+      - postgres
+      - mssql
+      - 1c
+      - other
+    examples:
+      - vendor=veeam
+
+  warranty_until:
+    level: host
+    required: false
+    description: "Warranty/support date for capacity and lifecycle reporting."
+    value_pattern: "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+    examples:
+      - warranty_until=2027-12
+
+event_routing_examples:
+  - name: 1c-prod-high
+    conditions:
+      env: prod
+      service: 1c-erp
+      notification: active
+      severity_min: High
+    operations:
+      - telegram: 1c-oncall
+      - itsm_ticket: P2
+  - name: backup-rpo-risk
+    conditions:
+      env: prod
+      scope: recovery
+      impact: rpo-risk
+      notification: active
+      severity_min: High
+    operations:
+      - telegram: backup-oncall
+      - itsm_ticket: P2
+
+dashboard_filters:
+  noc:
+    include:
+      env: prod
+      notification: active
+    group_by:
+      - service
+      - criticality
+      - impact
+  service_dashboard:
+    required_filters:
+      - service
+    group_by:
+      - component
+      - scope
+  executive_report:
+    group_by:
+      - service
+      - criticality
+      - owner
+      - location

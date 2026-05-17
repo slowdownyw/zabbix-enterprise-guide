@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Целевая архитектура мониторинга: поток данных</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1117;
+      --text: #d9e2ee;
+      --muted: #718195;
+      --blue: #64b5f6;
+      --green: #81c784;
+      --violet: #ce93d8;
+      --orange: #ff8a65;
+      --red: #ef9a9a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", system-ui, Arial, sans-serif;
+      padding: 16px;
+    }
+
+    .wrap {
+      margin: 0 auto;
+      max-width: 1420px;
+    }
+
+    h1 {
+      font-size: 16px;
+      line-height: 1.35;
+      margin: 0 0 12px;
+      text-align: center;
+    }
+
+    svg {
+      display: block;
+      height: auto;
+      width: 100%;
+    }
+
+    .band-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .node-title {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .node-line {
+      fill: var(--muted);
+      font-size: 10.5px;
+    }
+
+    .legend {
+      fill: #607080;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Целевая архитектура мониторинга: источники → сбор → ядро → обработка → каналы → реакция → инцидент → улучшения</h1>
+
+    <svg viewBox="0 0 1400 900" role="img" aria-labelledby="title desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="title">Сквозной поток данных в архитектуре мониторинга</title>
+      <desc id="desc">Схема показывает движение метрик и событий от источников через Zabbix Proxy, Zabbix Server, PostgreSQL, обработку событий, каналы уведомления, Service Desk, runbooks и postmortem.</desc>
+
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#546170"/>
+        </marker>
+        <marker id="alertArrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#ef5350"/>
+        </marker>
+        <marker id="feedbackArrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#3fb950"/>
+        </marker>
+
+        <g id="node">
+          <rect width="170" height="82" rx="6" fill="#101826" stroke="#2c3a4c" stroke-width="1.4"/>
+        </g>
+      </defs>
+
+      <rect width="1400" height="900" fill="#0d1117"/>
+
+      <rect x="88" y="38" width="1296" height="85" rx="5" fill="#0a1828" opacity=".82"/>
+      <rect x="88" y="151" width="1296" height="85" rx="5" fill="#051510" opacity=".82"/>
+      <rect x="88" y="264" width="1296" height="85" rx="5" fill="#12051f" opacity=".82"/>
+      <rect x="88" y="377" width="1296" height="85" rx="5" fill="#160900" opacity=".82"/>
+      <rect x="88" y="490" width="1296" height="85" rx="5" fill="#080c13" opacity=".82"/>
+      <rect x="88" y="600" width="1296" height="85" rx="5" fill="#051510" opacity=".82"/>
+      <rect x="88" y="710" width="1296" height="88" rx="5" fill="#110520" opacity=".82"/>
+
+      <text transform="rotate(-90,44,80)" x="44" y="80" text-anchor="middle" fill="#1565c0" class="band-label">ИСТОЧНИКИ</text>
+      <text transform="rotate(-90,44,193)" x="44" y="193" text-anchor="middle" fill="#2e7d32" class="band-label">СБОР</text>
+      <text transform="rotate(-90,44,306)" x="44" y="306" text-anchor="middle" fill="#7b1fa2" class="band-label">ЯДРО</text>
+      <text transform="rotate(-90,44,419)" x="44" y="419" text-anchor="middle" fill="#e64a19" class="band-label">ОБРАБОТКА</text>
+      <text transform="rotate(-90,44,532)" x="44" y="532" text-anchor="middle" fill="#0288d1" class="band-label">КАНАЛЫ</text>
+      <text transform="rotate(-90,44,642)" x="44" y="642" text-anchor="middle" fill="#2e7d32" class="band-label">РЕАКЦИЯ</text>
+      <text transform="rotate(-90,44,754)" x="44" y="754" text-anchor="middle" fill="#7b1fa2" class="band-label">ИНЦИДЕНТ</text>
+
+      <g transform="translate(93 41)">
+        <use href="#node"/>
+        <text x="85" y="24" text-anchor="middle" fill="var(--blue)" class="node-title">HARDWARE</text>
+        <text x="85" y="43" text-anchor="middle" class="node-line">IPMI / iDRAC / iLO</text>
+        <text x="85" y="59" text-anchor="middle" class="node-line">UPS, PDU, RAID</text>
+      </g>
+      <g transform="translate(275 41)">
+        <use href="#node"/>
+        <text x="85" y="24" text-anchor="middle" fill="var(--blue)" class="node-title">NETWORK</text>
+        <text x="85" y="43" text-anchor="middle" class="node-line">Cisco / Eltex / UserGate</text>
+        <text x="85" y="59" text-anchor="middle" class="node-line">SNMP v2c/v3, traps</text>
+      </g>
+      <g transform="translate(457 41)">
+        <use href="#node"/>
+        <text x="85" y="24" text-anchor="middle" fill="var(--blue)" class="node-title">OS / AGENTS</text>
+        <text x="85" y="43" text-anchor="middle" class="node-line">Windows / Linux</text>
+        <text x="85" y="59" text-anchor="middle" class="node-line">CPU, RAM, disk, proc</text>
+      </g>
+      <g transform="translate(639 41)">
+        <rect width="190" height="82" rx="6" fill="#101826" stroke="#2c3a4c" stroke-width="1.4"/>
+        <text x="95" y="24" text-anchor="middle" fill="var(--blue)" class="node-title">APPLICATIONS</text>
+        <text x="95" y="43" text-anchor="middle" class="node-line">1C, Exchange, MSSQL, PG</text>
+        <text x="95" y="59" text-anchor="middle" class="node-line">ODBC, WMI, user parameters</text>
+      </g>
+      <g transform="translate(839 41)">
+        <use href="#node"/>
+        <text x="85" y="24" text-anchor="middle" fill="var(--blue)" class="node-title">SYNTHETIC</text>
+        <text x="85" y="43" text-anchor="middle" class="node-line">HTTP tests, сценарии</text>
+        <text x="85" y="59" text-anchor="middle" class="node-line">login / send / receive</text>
+      </g>
+      <g transform="translate(1014 41)">
+        <rect width="170" height="82" rx="6" fill="#160500" stroke="#e65100" stroke-width="1.6" stroke-dasharray="5 3"/>
+        <text x="85" y="24" text-anchor="middle" fill="#ff7043" class="node-title">OT / SCADA</text>
+        <text x="85" y="43" text-anchor="middle" fill="#ef5350" font-size="10">только пассивно</text>
+        <text x="85" y="59" text-anchor="middle" class="node-line">ICMP / TCP / OPC bridge</text>
+      </g>
+      <g transform="translate(1196 41)">
+        <use href="#node"/>
+        <text x="85" y="24" text-anchor="middle" fill="var(--blue)" class="node-title">LOGS / EVENTS</text>
+        <text x="85" y="43" text-anchor="middle" class="node-line">Syslog, WinEvents</text>
+        <text x="85" y="59" text-anchor="middle" class="node-line">log items, SSL expiry</text>
+      </g>
+
+      <g transform="translate(93 154)">
+        <rect width="312" height="82" rx="6" fill="#041208" stroke="#2e7d32" stroke-width="1.6"/>
+        <text x="156" y="24" text-anchor="middle" fill="var(--green)" class="node-title">ZABBIX PROXY — CORP</text>
+        <text x="156" y="43" text-anchor="middle" class="node-line">Корпоративный сегмент</text>
+        <text x="156" y="59" text-anchor="middle" class="node-line">Active mode, PSK/TLS, буферизация</text>
+      </g>
+      <g transform="translate(520 154)">
+        <rect width="358" height="82" rx="6" fill="#150400" stroke="#e65100" stroke-width="1.6" stroke-dasharray="5 3"/>
+        <text x="179" y="24" text-anchor="middle" fill="#ff8a65" class="node-title">ZABBIX PROXY — OT DMZ</text>
+        <text x="179" y="43" text-anchor="middle" class="node-line">Изолированный OT-сегмент</text>
+        <text x="179" y="59" text-anchor="middle" fill="#ef5350" font-size="10">нет агентов внутри SCADA</text>
+      </g>
+      <g transform="translate(993 154)">
+        <rect width="390" height="82" rx="6" fill="#041208" stroke="#2e7d32" stroke-width="1.6"/>
+        <text x="195" y="24" text-anchor="middle" fill="var(--green)" class="node-title">ZABBIX PROXY — REMOTE SITES</text>
+        <text x="195" y="43" text-anchor="middle" class="node-line">Удаленные площадки и склады</text>
+        <text x="195" y="59" text-anchor="middle" class="node-line">Локальная буферизация переживает WAN-разрыв</text>
+      </g>
+
+      <g transform="translate(93 267)">
+        <rect width="548" height="82" rx="6" fill="#0f0224" stroke="#7b1fa2" stroke-width="2"/>
+        <text x="274" y="23" text-anchor="middle" fill="var(--violet)" class="node-title">ZABBIX SERVER</text>
+        <text x="274" y="42" text-anchor="middle" class="node-line">Event engine, escalation engine, media router, LLD processor</text>
+        <text x="274" y="58" text-anchor="middle" class="node-line">Auto-registration, problem correlation, RBAC, API</text>
+      </g>
+      <g transform="translate(658 267)">
+        <rect width="726" height="82" rx="6" fill="#0f0224" stroke="#7b1fa2" stroke-width="2"/>
+        <text x="363" y="23" text-anchor="middle" fill="var(--violet)" class="node-title">POSTGRESQL — партиционированная БД</text>
+        <text x="363" y="42" text-anchor="middle" class="node-line">history / trends по партициям, DROP PARTITION вместо DELETE</text>
+        <text x="363" y="58" text-anchor="middle" class="node-line">Patroni HA, PgBouncer, WAL-G, read-only datasource для Grafana</text>
+      </g>
+
+      <g transform="translate(93 380)">
+        <rect width="260" height="82" rx="6" fill="#140700" stroke="#e64a19" stroke-width="1.6"/>
+        <text x="130" y="24" text-anchor="middle" fill="var(--orange)" class="node-title">TRIGGER EVALUATION</text>
+        <text x="130" y="43" text-anchor="middle" class="node-line">Пороги, выражения, hysteresis</text>
+        <text x="130" y="59" text-anchor="middle" class="node-line">Severity P1..P4</text>
+      </g>
+      <g transform="translate(366 380)">
+        <rect width="260" height="82" rx="6" fill="#140700" stroke="#e64a19" stroke-width="1.6"/>
+        <text x="130" y="24" text-anchor="middle" fill="var(--orange)" class="node-title">EVENT CORRELATION</text>
+        <text x="130" y="43" text-anchor="middle" class="node-line">Дедупликация и связывание событий</text>
+        <text x="130" y="59" text-anchor="middle" class="node-line">Correlation tag rules</text>
+      </g>
+      <g transform="translate(639 380)">
+        <rect width="260" height="82" rx="6" fill="#140700" stroke="#e64a19" stroke-width="1.6"/>
+        <text x="130" y="24" text-anchor="middle" fill="var(--orange)" class="node-title">DEPENDENCY SUPPRESSION</text>
+        <text x="130" y="43" text-anchor="middle" class="node-line">Switch down → один алерт</text>
+        <text x="130" y="59" text-anchor="middle" class="node-line">Каскадный шум подавлен</text>
+      </g>
+      <g transform="translate(912 380)">
+        <rect width="370" height="82" rx="6" fill="#140700" stroke="#e64a19" stroke-width="2"/>
+        <text x="185" y="24" text-anchor="middle" fill="#ff7043" class="node-title">TAG-BASED ROUTING</text>
+        <text x="185" y="43" text-anchor="middle" class="node-line">service, criticality, owner, env, component</text>
+        <text x="185" y="59" text-anchor="middle" class="node-line">Conditions в Actions → MediaType и тикет</text>
+      </g>
+
+      <text x="255" y="489" text-anchor="middle" fill="#0288d1" font-size="10" font-weight="800">ВИЗУАЛИЗАЦИЯ</text>
+      <text x="960" y="489" text-anchor="middle" fill="#c62828" font-size="10" font-weight="800">АКТИВНЫЕ УВЕДОМЛЕНИЯ</text>
+
+      <g transform="translate(93 493)">
+        <rect width="208" height="82" rx="6" fill="#060d1a" stroke="#0288d1" stroke-width="1.6"/>
+        <text x="104" y="24" text-anchor="middle" fill="#81d4fa" class="node-title">ZABBIX NOC</text>
+        <text x="104" y="43" text-anchor="middle" class="node-line">Active events, P1/P2</text>
+        <text x="104" y="59" text-anchor="middle" class="node-line">Экран дежурки 24/7</text>
+      </g>
+      <g transform="translate(313 493)">
+        <rect width="208" height="82" rx="6" fill="#060d1a" stroke="#0288d1" stroke-width="1.6"/>
+        <text x="104" y="24" text-anchor="middle" fill="#81d4fa" class="node-title">GRAFANA</text>
+        <text x="104" y="43" text-anchor="middle" class="node-line">SLA, trends, capacity</text>
+        <text x="104" y="59" text-anchor="middle" class="node-line">CIO, тимлиды, PDF</text>
+      </g>
+      <g transform="translate(546 493)">
+        <rect width="152" height="82" rx="6" fill="#090408" stroke="#b71c1c" stroke-width="1.6"/>
+        <text x="76" y="24" text-anchor="middle" fill="var(--red)" class="node-title">TELEGRAM</text>
+        <text x="76" y="43" text-anchor="middle" class="node-line">High + Average</text>
+        <text x="76" y="59" text-anchor="middle" class="node-line">Ссылка на runbook</text>
+      </g>
+      <g transform="translate(710 493)">
+        <rect width="152" height="82" rx="6" fill="#090408" stroke="#b71c1c" stroke-width="1.6"/>
+        <text x="76" y="24" text-anchor="middle" fill="var(--red)" class="node-title">EMAIL</text>
+        <text x="76" y="43" text-anchor="middle" class="node-line">Команды, отчеты</text>
+        <text x="76" y="59" text-anchor="middle" class="node-line">SMTP relay</text>
+      </g>
+      <g transform="translate(874 493)">
+        <rect width="158" height="82" rx="6" fill="#130000" stroke="#c62828" stroke-width="2"/>
+        <text x="79" y="24" text-anchor="middle" fill="#ff1744" class="node-title">SMS / ЗВОНОК</text>
+        <text x="79" y="43" text-anchor="middle" fill="#ef5350" font-size="10">только P1/Disaster</text>
+        <text x="79" y="59" text-anchor="middle" class="node-line">15 → 30 → 60 мин</text>
+      </g>
+      <g transform="translate(1044 493)">
+        <rect width="172" height="82" rx="6" fill="#090408" stroke="#b71c1c" stroke-width="1.6"/>
+        <text x="86" y="24" text-anchor="middle" fill="var(--red)" class="node-title">WEBHOOK</text>
+        <text x="86" y="43" text-anchor="middle" class="node-line">JS MediaType → REST</text>
+        <text x="86" y="59" text-anchor="middle" class="node-line">High+ → Service Desk</text>
+      </g>
+      <g transform="translate(1228 493)">
+        <rect width="154" height="82" rx="6" fill="#060d1a" stroke="#0277bd" stroke-width="1.6"/>
+        <text x="77" y="24" text-anchor="middle" fill="#81d4fa" class="node-title">AUTO REPORTS</text>
+        <text x="77" y="43" text-anchor="middle" class="node-line">Grafana → PDF</text>
+        <text x="77" y="59" text-anchor="middle" class="node-line">SLA за месяц</text>
+      </g>
+
+      <g transform="translate(93 603)">
+        <rect width="272" height="82" rx="6" fill="#041208" stroke="#2e7d32" stroke-width="1.6"/>
+        <text x="136" y="24" text-anchor="middle" fill="#a5d6a7" class="node-title">SERVICE DESK</text>
+        <text x="136" y="43" text-anchor="middle" class="node-line">Тикет, SLA timer, owner</text>
+        <text x="136" y="59" text-anchor="middle" class="node-line">Auto-close при resolve</text>
+      </g>
+      <g transform="translate(378 603)">
+        <rect width="272" height="82" rx="6" fill="#041208" stroke="#2e7d32" stroke-width="1.6"/>
+        <text x="136" y="24" text-anchor="middle" fill="#a5d6a7" class="node-title">RUNBOOKS</text>
+        <text x="136" y="43" text-anchor="middle" class="node-line">Bookstack / Confluence</text>
+        <text x="136" y="59" text-anchor="middle" class="node-line">Ссылка из каждого P1/P2</text>
+      </g>
+      <g transform="translate(663 603)">
+        <rect width="252" height="82" rx="6" fill="#041208" stroke="#2e7d32" stroke-width="1.6"/>
+        <text x="126" y="24" text-anchor="middle" fill="#a5d6a7" class="node-title">ON-CALL ROSTER</text>
+        <text x="126" y="43" text-anchor="middle" class="node-line">Ротация дежурств</text>
+        <text x="126" y="59" text-anchor="middle" class="node-line">Кто отвечает сейчас</text>
+      </g>
+      <g transform="translate(928 603)">
+        <rect width="252" height="82" rx="6" fill="#041208" stroke="#2e7d32" stroke-width="1.6"/>
+        <text x="126" y="24" text-anchor="middle" fill="#a5d6a7" class="node-title">ЭСКАЛАЦИЯ</text>
+        <text x="126" y="43" text-anchor="middle" class="node-line">L1 → L2 → CIO</text>
+        <text x="126" y="59" text-anchor="middle" class="node-line">Actions + таймеры Zabbix</text>
+      </g>
+      <g transform="translate(1193 603)">
+        <rect width="189" height="82" rx="6" fill="#041208" stroke="#2e7d32" stroke-width="1.6"/>
+        <text x="94.5" y="24" text-anchor="middle" fill="#a5d6a7" class="node-title">AUDIT / GIT</text>
+        <text x="94.5" y="43" text-anchor="middle" class="node-line">Config export</text>
+        <text x="94.5" y="59" text-anchor="middle" class="node-line">Drift detection</text>
+      </g>
+
+      <g transform="translate(93 713)">
+        <rect width="248" height="86" rx="6" fill="#0d0220" stroke="#7b1fa2" stroke-width="1.6"/>
+        <text x="124" y="25" text-anchor="middle" fill="var(--violet)" class="node-title">ACKNOWLEDGE</text>
+        <text x="124" y="44" text-anchor="middle" class="node-line">Дежурный берет в работу</text>
+        <text x="124" y="60" text-anchor="middle" class="node-line">Комментарий, owner</text>
+      </g>
+      <g transform="translate(353 713)">
+        <rect width="248" height="86" rx="6" fill="#0d0220" stroke="#7b1fa2" stroke-width="1.6"/>
+        <text x="124" y="25" text-anchor="middle" fill="var(--violet)" class="node-title">ДИАГНОСТИКА</text>
+        <text x="124" y="44" text-anchor="middle" class="node-line">Runbook → шаги</text>
+        <text x="124" y="60" text-anchor="middle" class="node-line">Root cause finding</text>
+      </g>
+      <g transform="translate(613 713)">
+        <rect width="248" height="86" rx="6" fill="#0d0220" stroke="#7b1fa2" stroke-width="1.6"/>
+        <text x="124" y="25" text-anchor="middle" fill="var(--violet)" class="node-title">RESOLVE</text>
+        <text x="124" y="44" text-anchor="middle" class="node-line">Фикс и верификация</text>
+        <text x="124" y="60" text-anchor="middle" class="node-line">MTTR записан</text>
+      </g>
+      <g transform="translate(873 709)">
+        <rect width="509" height="92" rx="6" fill="#1a0032" stroke="#ab47bc" stroke-width="2.5"/>
+        <text x="254.5" y="25" text-anchor="middle" fill="#e040fb" font-size="15" font-weight="800">POSTMORTEM</text>
+        <text x="254.5" y="44" text-anchor="middle" class="node-line">Timeline, Root Cause, Impact, Action Items</text>
+        <text x="254.5" y="60" text-anchor="middle" class="node-line">Обновить runbooks, шаблоны, пороги, SLO</text>
+      </g>
+
+      <line x1="179" y1="123" x2="215" y2="151" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="361" y1="123" x2="280" y2="151" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="543" y1="123" x2="330" y2="151" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="734" y1="123" x2="660" y2="151" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="921" y1="123" x2="740" y2="151" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="1095" y1="123" x2="810" y2="151" stroke="#7a2800" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+      <line x1="1281" y1="123" x2="1210" y2="151" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <line x1="249" y1="236" x2="310" y2="264" stroke="#42a5f5" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="699" y1="236" x2="480" y2="264" stroke="#42a5f5" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="1188" y1="236" x2="590" y2="264" stroke="#42a5f5" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <line x1="641" y1="305" x2="658" y2="305" stroke="#ab47bc" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="658" y1="318" x2="641" y2="318" stroke="#ab47bc" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <line x1="220" y1="349" x2="200" y2="377" stroke="#e64a19" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="320" y1="349" x2="400" y2="377" stroke="#e64a19" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="420" y1="349" x2="680" y2="377" stroke="#e64a19" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="520" y1="349" x2="990" y2="377" stroke="#e64a19" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <line x1="223" y1="462" x2="197" y2="490" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="496" y1="462" x2="417" y2="490" stroke="#546170" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="1050" y1="462" x2="700" y2="490" stroke="#ef5350" stroke-width="1.2" marker-end="url(#alertArrow)"/>
+      <line x1="1080" y1="462" x2="830" y2="490" stroke="#ef5350" stroke-width="1.2" marker-end="url(#alertArrow)"/>
+      <line x1="1100" y1="462" x2="953" y2="490" stroke="#ef5350" stroke-width="1.5" marker-end="url(#alertArrow)"/>
+      <line x1="1140" y1="462" x2="1110" y2="490" stroke="#ef5350" stroke-width="1.2" marker-end="url(#alertArrow)"/>
+      <line x1="1200" y1="462" x2="1305" y2="490" stroke="#42a5f5" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+      <line x1="1130" y1="575" x2="310" y2="600" stroke="#66bb6a" stroke-width="1.5" marker-end="url(#feedbackArrow)"/>
+      <line x1="622" y1="575" x2="514" y2="600" stroke="#66bb6a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#feedbackArrow)"/>
+      <line x1="953" y1="575" x2="789" y2="600" stroke="#66bb6a" stroke-width="1.2" marker-end="url(#feedbackArrow)"/>
+      <line x1="1080" y1="575" x2="1054" y2="600" stroke="#66bb6a" stroke-width="1.2" marker-end="url(#feedbackArrow)"/>
+
+      <line x1="229" y1="685" x2="217" y2="710" stroke="#ab47bc" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="514" y1="685" x2="477" y2="710" stroke="#ab47bc" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="789" y1="685" x2="737" y2="710" stroke="#ab47bc" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="1054" y1="685" x2="1050" y2="710" stroke="#ab47bc" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <line x1="341" y1="756" x2="353" y2="756" stroke="#ab47bc" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="601" y1="756" x2="613" y2="756" stroke="#ab47bc" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="861" y1="756" x2="873" y2="756" stroke="#ab47bc" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+      <path d="M 1127 801 Q 1378 840 1378 419 Q 1378 380 1282 419" stroke="#3fb950" stroke-width="1.5" fill="none" stroke-dasharray="7 4" marker-end="url(#feedbackArrow)"/>
+      <text transform="rotate(90,1368,610)" x="1368" y="610" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">УЛУЧШЕНИЯ</text>
+
+      <path d="M 950 801 Q 950 850 514 850 Q 514 685 514 685" stroke="#3fb950" stroke-width="1" fill="none" stroke-dasharray="5 3" marker-end="url(#feedbackArrow)"/>
+      <text x="730" y="858" text-anchor="middle" fill="#3fb950" font-size="10">обновить runbooks</text>
+
+      <rect x="93" y="870" width="724" height="24" rx="4" fill="#161b22" opacity=".9"/>
+      <line x1="108" y1="882" x2="135" y2="882" stroke="#546170" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <text x="143" y="886" class="legend">основной поток</text>
+      <line x1="245" y1="882" x2="272" y2="882" stroke="#ef5350" stroke-width="1.5" marker-end="url(#alertArrow)"/>
+      <text x="280" y="886" class="legend">алертинг</text>
+      <line x1="360" y1="882" x2="387" y2="882" stroke="#66bb6a" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#feedbackArrow)"/>
+      <text x="395" y="886" class="legend">фидбек / улучшения</text>
+      <rect x="550" y="876" width="38" height="12" rx="3" fill="#160500" stroke="#e65100" stroke-dasharray="4 3"/>
+      <text x="596" y="886" class="legend">OT-ограничения</text>
+    </svg>
+  </div>
+</body>
+</html>

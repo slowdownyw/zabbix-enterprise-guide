@@ -1,0 +1,60 @@
+# MkDocs build
+site/
+.cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Editor backup
+*~
+*.bak
+*.orig
+
+# Local secrets — никогда не комитим
+.env
+.env.local
+.env.*.local
+secrets.yml
+secrets.yaml
+*.key
+*.pem
+*.pfx
+*.p12
+credentials.json
+config.local.*
+
+# Zabbix exports — могут содержать токены/доменные имена
+*.zbxexport
+api_token
+zbx_token
+*_token.txt
+
+# CSV-выгрузки из скриптов аудита (могут содержать имена хостов)
+*.csv
+
+# Output of audit scripts
+audit_output/
+01_hosts_all.csv
+02_hosts_missing_tags.csv
+03_hosts_unknown_owner_service_os.csv
+04_hosts_no_templates.csv
+05_hosts_unavailable_interfaces.csv
+06_problems_active.csv
+
+_private/
