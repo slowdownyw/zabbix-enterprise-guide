@@ -99,9 +99,9 @@ plugins:
 
 nav:
   - Главная: index.md
-  - Оглавление: contents.md        # ← новая страница
-  - Глоссарий: glossary.md
   - Манифест: 00_manifesto.md
+  - Оглавление: contents.md
+  - Глоссарий: glossary.md
   - Принципы и дизайн:
       - Сервис, а не хост: 01_service_not_host.md
       - Severity = действие: 02_severity_model.md
