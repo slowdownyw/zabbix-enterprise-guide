@@ -78,7 +78,7 @@ Base → Role → Application → Synthetic
 - непоследовательные теги и severity;
 - слишком общие для сервисных операций;
 - не отражают локальное владение/SLA/runbook'и;
-- сложно стандартизировать на разнородных системах.
+- сложно стандартизировать в гетерогенной среде.
 
 ---
 
@@ -416,4 +416,3 @@ Plant: Legacy Bundle - 1C App Host
 - [Глава 04 — LLD и prototypes](../../docs/04_lld_and_prototypes.md)
 - [Глава 05 — Многоуровневый дизайн](../../docs/05_layered_design.md)
 - [Глава 13 — Требования к шаблонам](../../docs/13_template_requirements.md)
-
