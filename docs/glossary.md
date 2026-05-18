@@ -19,11 +19,11 @@
 | Item prototype | Прототип элемента данных | |
 | Trigger prototype | Прототип триггера | |
 | Media type | Тип оповещения | Канал доставки уведомлений |
-| Maintenance | Период обслуживания | |
+| Maintenance window | Окно обслуживания | В Zabbix UI — раздел Maintenance |
 | User macro | Пользовательский макрос | |
 | Service (SLA-объект) | Услуга | В контексте Zabbix Services → SLA |
 | Service (Linux/Windows) | Служба | systemd unit, Windows service |
-| Host group | Группа узлов сети | В интерфейсе — «группы узлов сети» |
+| Host group | Группа хостов | В старых версиях — «группа узлов сети»; в актуальном Zabbix UI — «группа хостов» |
 | User role | Роль пользователя | |
 | Audit log | Журнал аудита | |
 
@@ -79,6 +79,7 @@
 | **Recovery operation** | Действие при восстановлении: уведомить о RESOLVED, закрыть тикет, обновить статус. | [Многоуровневая модель](05_layered_design.md), [Операционка](12_operations.md) |
 | **Escalation** | Передача инцидента дальше по цепочке: L1, L2, профильная команда, руководитель. | [Архитектура](06_architecture.md), [Операционка](12_operations.md) |
 | **Escalation matrix** | Документированная схема: кто получает P1/P2, через сколько минут, кто резервный контакт. | [Операционка](12_operations.md), [Implementation Playbook](16_implementation_playbook.md) |
+| **L1 / L2** | Уровни поддержки. L1 — дежурный/NOC: первичное реагирование, диагностика по runbook. L2 — профильный инженер: разбор корневых причин, нестандартные случаи. | [Runbooks](09_runbooks.md), [Операционка](12_operations.md) |
 | **Дежурство** (On-call) | Дежурство или роль, которая обязана реагировать на активные уведомления. | [Runbooks](09_runbooks.md), [Операционка](12_operations.md) |
 | **NOC** | Операционный центр или дежурная функция, которая смотрит активные проблемы, подтверждает события и эскалирует. | [Дашборды](11_dashboards_reporting.md), [Операционка](12_operations.md) |
 | **Acknowledge** | Подтверждение, что событие взято в работу. Не равно исправлению проблемы. | [Дашборды](11_dashboards_reporting.md), [Операционка](12_operations.md) |
@@ -107,7 +108,7 @@
 | **Prototype tag** | Тег, заданный на prototype, чтобы discovered item/trigger сразу наследовал правильный смысл. | [LLD](04_lld_and_prototypes.md), [Теги](03_tags_and_groups.md) |
 | **Event tag `service`** | Методический тег события (`service=<name>`), связывающий объект или событие с бизнес-сервисом. Используется для dashboards, routing и фильтрации. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
 | **Zabbix Service tag** | Тег, настраиваемый непосредственно на объекте типа **Service** в Zabbix (раздел Services). Используется для сопоставления SLA и сервисных правил; не то же самое, что event tag `service=` на хосте/триггере. | [SLA](10_sla_service_catalog.md), [Теги](03_tags_and_groups.md) |
-| **env** | Среда: prod, test, dev, dr. Нужна для фильтрации, routing и maintenance. | [Теги](03_tags_and_groups.md), [Roadmap](07_implementation_roadmap.md) |
+| **env** | Среда хоста: prod, test, dev, dr. `dr` — площадка аварийного восстановления (Disaster Recovery site). Нужна для фильтрации, routing и maintenance windows. | [Теги](03_tags_and_groups.md), [Roadmap](07_implementation_roadmap.md) |
 | **location** | Площадка или логическое место: dc-main, plant-main, remote-site. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
 | **segment** | Сетевой или организационный сегмент: it, ot, dmz, cloud. Влияет на права, безопасность и архитектуру proxy. | [Теги](03_tags_and_groups.md), [Архитектура](06_architecture.md) |
 | **owner** | Команда или роль, которая отвечает за сервис/компонент. | [Теги](03_tags_and_groups.md), [Implementation Playbook](16_implementation_playbook.md) |
@@ -170,7 +171,10 @@
 | **Passive agent** | Zabbix server/proxy сам опрашивает agent. Требует доступности agent по сети. | [ADR agent mode](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-002-agent-mode-and-encryption.md), [Roadmap](07_implementation_roadmap.md) |
 | **PSK** | Pre-shared key для TLS-шифрования agent/proxy connections. Практичный baseline безопасности. | [Roadmap](07_implementation_roadmap.md), [ADR agent mode](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-002-agent-mode-and-encryption.md) |
 | **TLS-сертификаты** | Более строгая модель шифрования, обычно требует внутреннего CA и зрелой эксплуатации сертификатов. | [Roadmap](07_implementation_roadmap.md), [ADR agent mode](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-002-agent-mode-and-encryption.md) |
+| **CA** | Certificate Authority — удостоверяющий центр, выпускающий TLS-сертификаты. Требуется при шифровании соединений agent/proxy через TLS с сертификатами. | [Roadmap](07_implementation_roadmap.md), [ADR agent mode](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-002-agent-mode-and-encryption.md) |
 | **DMZ** | Сегмент между доверенными и недоверенными зонами. Часто место для proxy или интеграционных точек. | [Архитектура](06_architecture.md), [Implementation Playbook](16_implementation_playbook.md) |
+| **DC** | Data Center — площадка или здание, где размещена инфраструктура. В тег-схеме используется как значение тега location (например, dc-main, dc-dr). | [Теги](03_tags_and_groups.md), [Архитектура](06_architecture.md) |
+| **DR** | Disaster Recovery site — резервная площадка для аварийного восстановления. В тег-схеме: env=dr, location=dc-dr. Связан с метриками RPO/RTO. | [Теги](03_tags_and_groups.md), [Roadmap](07_implementation_roadmap.md) |
 | **OT** | Operational Technology: промышленный контур, где активное вмешательство и сканирование могут быть опасны. | [Манифест](00_manifesto.md), [Архитектура](06_architecture.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **SCADA** | Системы диспетчерского управления и сбора данных. В книге рассматриваются как осторожный, часто read-only контур мониторинга. | [Манифест](00_manifesto.md), [Архитектура](06_architecture.md), [Требования к шаблонам](13_template_requirements.md) |
 | **КИИ** | Критическая информационная инфраструктура. В книге важна как архитектурное ограничение: нельзя “просто поставить агент”. | [Манифест](00_manifesto.md), [Архитектура](06_architecture.md) |
@@ -203,6 +207,8 @@
 | **Календарь заморозки** (Freeze calendar) | Периоды, когда изменения запрещены или ограничены: закрытие месяца, производственный пик, годовой баланс. | [Операционка](12_operations.md), [SLA](10_sla_service_catalog.md) |
 | **Change request** | Формальная заявка на изменение, часто связанная с maintenance window и ServiceDesk. | [Операционка](12_operations.md), [GitOps](08_gitops_for_zabbix.md) |
 | **ServiceDesk / ITSM** | Система учёта инцидентов, изменений и SLA. Zabbix создаёт сигнал, ITSM хранит процесс. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
+| **ITIL** | IT Infrastructure Library — набор практик по управлению IT-услугами. В книге — ориентир для incident management, change control, SLA и сервисного каталога. | [SLA](10_sla_service_catalog.md), [Операционка](12_operations.md) |
+| **CMDB** | Configuration Management Database — база данных конфигурационных единиц инфраструктуры. Zabbix может выступать источником данных для CMDB или синхронизироваться с ней через API. | [Implementation Playbook](16_implementation_playbook.md), [Roadmap](07_implementation_roadmap.md) |
 | **Ticket** | Запись инцидента или задачи в ITSM. Не все alerts должны становиться тикетами. | [Теги](03_tags_and_groups.md), [Roadmap](07_implementation_roadmap.md) |
 | **Auto-close** | Автоматическое закрытие или перевод тикета при recovery event. Требует аккуратной интеграции. | [Roadmap](07_implementation_roadmap.md), [Операционка](12_operations.md) |
 | **SLA** | Service Level Agreement: договорённость с бизнесом о доступности или качестве сервиса. Нельзя подписывать без данных. | [SLA](10_sla_service_catalog.md), [Манифест](00_manifesto.md) |
@@ -244,6 +250,7 @@
 | **RACI** | Матрица ответственности: Responsible, Accountable, Consulted, Informed. | [Implementation Playbook](16_implementation_playbook.md), [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/raci-matrix.md) |
 | **Acceptance checklist** | Список критериев, по которым внедрение можно принимать, а не просто считать “настроенным”. | [Implementation Playbook](16_implementation_playbook.md), [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/implementation-checklist.md) |
 | **GitOps для Zabbix** | Подход к контролю конфигурации через Git, export/import, review, drift detection и частичную автоматизацию. | [GitOps](08_gitops_for_zabbix.md), [ADR change control](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-007-change-control-and-gitops.md) |
+| **CI/CD** | Continuous Integration / Continuous Delivery — практика непрерывной интеграции и доставки. В контексте книги: автоматизированный lint, тестирование и экспорт/импорт конфигурации Zabbix через pipeline. | [GitOps](08_gitops_for_zabbix.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Export/import** | Минимальный способ версионировать Zabbix-конфигурацию: экспортировать YAML/XML, хранить в Git, импортировать изменения. | [GitOps](08_gitops_for_zabbix.md), [Roadmap](07_implementation_roadmap.md) |
 | **Drift** | Расхождение между тем, что хранится в Git/стандарте, и тем, что реально находится в Zabbix UI. | [GitOps](08_gitops_for_zabbix.md), [Операционка](12_operations.md) |
 | **Drift detection** | Регулярная проверка расхождений между Git/export и живой конфигурацией Zabbix. | [GitOps](08_gitops_for_zabbix.md), [Implementation Playbook](16_implementation_playbook.md) |
@@ -270,10 +277,13 @@
 | **MSSQL** | Частый слой middleware для 1С/Exchange/приложений: locks, deadlocks, backup age, tempdb, sessions. | [Требования к шаблонам](13_template_requirements.md), [Многоуровневая модель](05_layered_design.md) |
 | **PostgreSQL** | БД Zabbix или прикладная БД; в Zabbix-контуре важны partitioning, retention, trends/history. | [Архитектура](06_architecture.md), [Roadmap](07_implementation_roadmap.md) |
 | **Exchange** | Пример сервиса, который проверяется не только health БД, но и синтетикой отправки/получения почты. | [Сервис, а не хост](01_service_not_host.md), [Требования к шаблонам](13_template_requirements.md) |
+| **DAG** | Database Availability Group — группа высокой доступности баз данных Exchange. В шаблонах проверяются состояние реплик, очереди и синтетика отправки/получения. | [Требования к шаблонам](13_template_requirements.md), [Сервис, а не хост](01_service_not_host.md) |
 | **Veeam** | Пример backup-системы: возраст последнего успешного бэкапа важнее простого статуса job. | [Операционка](12_operations.md), [Требования к шаблонам](13_template_requirements.md) |
 | **UserGate** | Пример сетевого/ИБ-компонента, где важны интерфейсы, VPN, политики, доступность. | [Требования к шаблонам](13_template_requirements.md), [Roadmap](07_implementation_roadmap.md) |
 | **OPC** | Интерфейс/протокол в промышленном контуре; мониторинг требует осторожности и согласования с SCADA/ИБ. | [Требования к шаблонам](13_template_requirements.md), [Архитектура](06_architecture.md) |
+| **HMI / PLC** | Human-Machine Interface / Programmable Logic Controller — компоненты промышленного контура. Мониторинг — пассивный или через OPC/SNMP, строго read-only, согласуется с ИБ и владельцем SCADA. | [Архитектура](06_architecture.md), [Требования к шаблонам](13_template_requirements.md) |
 | **SNMP** | Базовый способ мониторинга сетевого оборудования, UPS, PDU, части железа. | [Архитектура](06_architecture.md), [Требования к шаблонам](13_template_requirements.md) |
+| **UPS / PDU** | Источник бесперебойного питания / блок распределения питания. Мониторятся через SNMP: уровень заряда, нагрузка, статус батареи, входное/выходное напряжение. | [Архитектура](06_architecture.md), [Требования к шаблонам](13_template_requirements.md) |
 | **IPMI / iLO / iDRAC** | Каналы мониторинга железа: питание, температура, RAID, аппаратные события. | [Сервис, а не хост](01_service_not_host.md), [Архитектура](06_architecture.md) |
 | **DNS health** | Синтетическая или компонентная проверка разрешения ключевых имён. | [Roadmap](07_implementation_roadmap.md), [Сервис, а не хост](01_service_not_host.md) |
 | **AD / Kerberos** | Инфраструктурный сервис, который часто требует синтетической проверки входа/получения ticket, а не только ping DC. | [Roadmap](07_implementation_roadmap.md), [Сервис, а не хост](01_service_not_host.md) |
