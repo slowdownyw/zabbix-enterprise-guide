@@ -58,3 +58,4 @@ audit_output/
 06_problems_active.csv
 
 _private/
+.claude/
