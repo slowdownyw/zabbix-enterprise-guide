@@ -47,7 +47,7 @@
   src="../diagrams/monitoring_arch_layers.html"
   title="Архитектура мониторинга как операционная модель"
   loading="lazy"
-  style="width: 100%; height: 900px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px;"
+  style="width: 100%; height: 800px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px;"
   sandbox="allow-scripts allow-same-origin"
 ></iframe>
 
@@ -55,7 +55,8 @@
   src="../diagrams/monitoring_flow.html"
   title="Целевая архитектура мониторинга: поток данных"
   loading="lazy"
-  style="width: 100%; height: 780px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; margin-top: 1rem;"
+  style="width: 100%; height: 620px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; margin-top: 1rem;"
+  sandbox="allow-scripts allow-same-origin"
 ></iframe>
 
 ---
