@@ -64,7 +64,7 @@ git push
 
 ### Уровень 2: Ansible community.zabbix
 
-Это **де-факто стандарт** если хочешь IaC для Zabbix.
+Это **де-факто стандарт**, если нужен IaC для Zabbix.
 
 https://github.com/ansible-collections/community.zabbix
 

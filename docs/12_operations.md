@@ -67,7 +67,7 @@ else
     touch "$STATE_FILE"
     curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
       -d "chat_id=$CHAT_ID" \
-      -d "text=🔴 ZABBIX НЕДОСТУПЕН — $(date '+%Y-%m-%d %H:%M') — проверь сервер" \
+      -d "text=🔴 ZABBIX НЕДОСТУПЕН — $(date '+%Y-%m-%d %H:%M') — требуется проверка сервера" \
       -d "parse_mode=HTML" > /dev/null
   fi
 fi

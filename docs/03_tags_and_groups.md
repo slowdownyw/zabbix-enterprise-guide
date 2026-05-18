@@ -78,7 +78,7 @@ component=web
 
 ### 1. Фильтрация Problems
 
-Вместо “покажи всё горящее” делаешь:
+Вместо “покажи всё горящее” используется фильтр:
 
 ```text
 env=prod
@@ -516,7 +516,7 @@ interface=br-lan
 
 Самый чистый для item/trigger tags.
 
-В template `Plant: Windows Base` задаёшь:
+В template `Plant: Windows Base` задаются:
 
 ```text
 template=plant-windows-base
@@ -617,13 +617,13 @@ def merge_tags(existing, desired):
     return list(result.values())
 ```
 
-Не делай так:
+Так делать не нужно:
 
 ```python
 host.update(hostid=123, tags=[{"tag": "service", "value": "1c-erp"}])
 ```
 
-Потому что можешь снести все остальные tags.
+Так можно удалить все остальные tags.
 
 ### Способ 4. Через IaC / Ansible
 

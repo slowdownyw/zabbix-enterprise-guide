@@ -64,7 +64,7 @@ https://response.pagerduty.com/
 
 **Awesome Runbooks**
 https://github.com/taxigy/awesome-runbooks
-Сборник ссылок на открытые runbook'и разных компаний. Там есть AWS, Kubernetes, PostgreSQL, Nginx и т.д. Смотришь чужое, адаптируешь.
+Сборник ссылок на открытые runbook'и разных компаний. Там есть AWS, Kubernetes, PostgreSQL, Nginx и т.д. Можно брать чужую структуру и адаптировать под свой контекст.
 
 **SRE Book от Google**
 https://sre.google/sre-book/on-call/
@@ -78,7 +78,7 @@ https://github.com/grafana/runbook
 
 ### Готовые runbook'и под конкретные стеки
 
-Это то что реально полезно — ищешь под свой инструмент:
+Это то, что реально полезно: поиск под конкретный инструмент.
 
 | Стек | Где искать |
 |---|---|
