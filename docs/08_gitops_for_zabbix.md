@@ -246,7 +246,7 @@ if diff:
 - Шаблоны — YAML в git, import через UI или скрипт при изменениях
 
 **Фаза 3 / Год 2:**
-- CI/CD pipeline на GitLab (если у них есть или появится)
+- CI/CD pipeline на GitLab (если GitLab уже есть или появится)
 - Drift detection alert
 - Постепенно — всё через Ansible, ничего напрямую в UI
 
