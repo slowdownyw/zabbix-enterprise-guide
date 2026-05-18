@@ -89,7 +89,7 @@
 | **Correlation** | Объединение или подавление связанных событий, чтобы вместо каскада симптомов получить управляемую картину. | [Манифест](00_manifesto.md), [Архитектура](06_architecture.md), [Теги](03_tags_and_groups.md) |
 | **Noise ratio** | Доля шумовых, бесполезных или самовосстанавливающихся алертов. Используется в регулярном alert review. | [Операционка](12_operations.md), [Дашборды](11_dashboards_reporting.md) |
 | **Alert hygiene** | Регулярная дисциплина чистки шумных триггеров, проверки severity, runbook coverage и маршрутизации. | [Операционка](12_operations.md), [Дашборды](11_dashboards_reporting.md) |
-| **Weekly alert review** | Регулярная короткая встреча, где разбирают топ шумовых триггеров, пропуски runbook и качество реакции. | [Операционка](12_operations.md), [Implementation Playbook](16_implementation_playbook.md) |
+| **Еженедельный разбор алертов** (Weekly alert review) | Регулярная короткая встреча, где разбирают топ шумовых триггеров, пропуски runbook и качество реакции. | [Операционка](12_operations.md), [Implementation Playbook](16_implementation_playbook.md) |
 
 ---
 
@@ -238,6 +238,7 @@
 | **Wave** | Одна волна rollout: ограниченный набор хостов/сервисов/шаблонов с проверкой после изменения. | [Implementation Playbook](16_implementation_playbook.md), [Roadmap](07_implementation_roadmap.md) |
 | **Phase gate** | Контрольная точка между фазами внедрения: что принято, что измерено, что нельзя тащить дальше. | [Implementation Playbook](16_implementation_playbook.md), [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/phase-gates.md) |
 | **Передача в эксплуатацию** (Handover) | Передача мониторинга в штатную эксплуатацию: роли, runbooks, dashboards, процессы, ответственность. | [Implementation Playbook](16_implementation_playbook.md), [Roadmap](07_implementation_roadmap.md) |
+| **Operations Handbook** | Итоговый эксплуатационный документ: архитектура, процессы, runbooks, escalation, передача в эксплуатацию, routine operations. | [Roadmap](07_implementation_roadmap.md), [Операционка](12_operations.md) |
 | **ADR** | Architecture Decision Record: запись архитектурного решения, вариантов, последствий и критериев пересмотра. | [Implementation Playbook](16_implementation_playbook.md), [examples/decisions](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/README.md) |
 | **Decision log** | Журнал решений, помогающий видеть, какие ADR предложены, приняты и когда пересматриваются. | [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/decision-log.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **RACI** | Матрица ответственности: Responsible, Accountable, Consulted, Informed. | [Implementation Playbook](16_implementation_playbook.md), [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/raci-matrix.md) |
@@ -252,7 +253,6 @@
 | **Auto-registration** | Автоматическое добавление новых agents/hosts в Zabbix. Полезно, но опасно без tag schema и правил групп. | [Roadmap](07_implementation_roadmap.md), [GitOps](08_gitops_for_zabbix.md) |
 | **HostMetadata** | Строка метаданных агента для auto-registration и первичной классификации host. | [Теги](03_tags_and_groups.md), [Roadmap](07_implementation_roadmap.md) |
 | **Retagging** | Приведение существующих hosts/items/triggers к новой tag schema. | [Теги](03_tags_and_groups.md), [Implementation Playbook](16_implementation_playbook.md) |
-| **Operations Handbook** | Итоговый эксплуатационный документ: архитектура, процессы, runbooks, escalation, handover, routine operations. | [Roadmap](07_implementation_roadmap.md), [Операционка](12_operations.md) |
 | **Production-ready** | Готовность к production: не только работает в тесте, но имеет ownership, теги, runbooks, routing, rollback и мониторинг влияния. | [README](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/README.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Lab-tested** | Проверено в лаборатории, но требует проверки на реальной инфраструктуре и данных. | [README](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/README.md), [scripts](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/scripts/README.md) |
 | **Design draft** | Концептуально полезный черновик, который нужно адаптировать и валидировать в конкретной среде. | [README](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/README.md), [examples](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/README.md) |
