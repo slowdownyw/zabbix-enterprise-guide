@@ -155,7 +155,7 @@ Severity >= Warning → Telegram
 env=prod
 severity >= High
 owner=network
-→ Telegram сетевикам
+→ Telegram сетевой команде
 ```
 
 или:

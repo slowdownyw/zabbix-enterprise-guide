@@ -79,7 +79,7 @@
 2. Нет актуального inventory.
 3. Нет единого источника правды по площадкам и критичности.
 4. В Zabbix тысячи старых триггеров без owner и runbook.
-5. Сетевики/ИБ/АСУ ТП не согласовали границы мониторинга.
+5. Сетевая команда, ИБ или АСУ ТП не согласовали границы мониторинга.
 6. Команда спорит о tag schema больше двух недель.
 7. Нет решения: UI-first, export-to-git, Ansible или другой способ управления конфигурацией.
 8. ITSM отсутствует или не готов принимать автоматические инциденты.
@@ -129,7 +129,7 @@ Implementation playbook отвечает:
 | **Monitoring architect** | Ведущий инженер / архитектор | Архитектура, tag schema, severity model, template composition, design decisions |
 | **Zabbix administrator** | Инженер мониторинга | Реализация в Zabbix: хосты, шаблоны, actions, media, proxies |
 | **Platform / DB owner** | Linux/PostgreSQL/VMware команда | Сервер, БД, backup, HA, capacity, OS hardening |
-| **Network owner** | Сетевики | SNMP, routing, firewall rules, proxy placement, network discovery |
+| **Network owner** | Сетевая команда | SNMP, routing, firewall rules, proxy placement, network discovery |
 | **Application owners** | 1С, Exchange, MSSQL, Veeam, ERP/CRM команды | Прикладные метрики, критичность, диагностика, runbooks |
 | **NOC / on-call lead** | Дежурная служба / L1 lead | Проверка процесса реакции, escalation, acknowledgement, handover |
 | **Security owner** | ИБ | Доступы, секреты, TLS/PSK, audit, внешние integrations |
@@ -146,7 +146,7 @@ Implementation playbook отвечает:
 | Sponsor | CIO + service owner для ключевых сервисов |
 | Monitoring owner | Monitoring architect + Zabbix administrator |
 | Platform owner | Linux/VM/DB эксплуатация |
-| Network/Security contact | Сетевик + ИБ контакт |
+| Network/Security contact | Контакт сетевой команды + контакт ИБ |
 | Application representatives | 1С/БД/почта хотя бы по одному человеку |
 | On-call representative | Тот, кто реально получает алерты |
 
@@ -196,7 +196,7 @@ Implementation playbook отвечает:
 - [глава 6 — Архитектура и развёртывание](06_architecture.md)
 - [глава 12 — Эксплуатационная модель мониторинга](12_operations.md)
 
-### Сетевики
+### Сетевая команда
 
 Согласовать:
 
