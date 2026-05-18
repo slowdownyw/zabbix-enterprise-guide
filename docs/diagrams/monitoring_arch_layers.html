@@ -209,6 +209,31 @@
       .component-grid,
       .break-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── Light theme ── */
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f0f4f8;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --line: #d1d9e0;
+      --text: #1a2332;
+      --muted: #4a5568;
+      --soft: #718096;
+      --blue: #1565c0;
+      --violet: #5e35b1;
+      --amber: #d97706;
+      --red: #c62828;
+      --green: #1b5e20;
+      --orange: #bf360c;
+      --cyan: #006064;
+    }
+
+    :root[data-theme="light"] .component,
+    :root[data-theme="light"] .flow-step,
+    :root[data-theme="light"] .break-card {
+      background: #edf2f7;
+    }
   </style>
 </head>
 <body>
@@ -396,6 +421,24 @@
     });
 
     render("infra");
+
+    // Follows MkDocs Material theme toggle (localStorage) with prefers-color-scheme fallback
+    (function () {
+      function applyTheme() {
+        var scheme = 'dark';
+        try {
+          var stored = localStorage.getItem('data-md-color-scheme');
+          if (stored) { scheme = stored === 'default' ? 'light' : 'dark'; }
+          else if (window.matchMedia('(prefers-color-scheme: light)').matches) { scheme = 'light'; }
+        } catch (e) {
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) { scheme = 'light'; }
+        }
+        document.documentElement.setAttribute('data-theme', scheme);
+      }
+      applyTheme();
+      window.addEventListener('storage', function (e) { if (e.key === 'data-md-color-scheme') applyTheme(); });
+      if (window.matchMedia) { window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme); }
+    }());
   </script>
 </body>
 </html>

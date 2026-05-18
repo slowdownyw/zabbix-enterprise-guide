@@ -47,15 +47,15 @@
   src="../diagrams/monitoring_arch_layers.html"
   title="Архитектура мониторинга как операционная модель"
   loading="lazy"
-  style="width: 100%; height: 900px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; background: #0b1020;"
-  sandbox="allow-scripts"
+  style="width: 100%; height: 900px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px;"
+  sandbox="allow-scripts allow-same-origin"
 ></iframe>
 
 <iframe
   src="../diagrams/monitoring_flow.html"
   title="Целевая архитектура мониторинга: поток данных"
   loading="lazy"
-  style="width: 100%; height: 780px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; background: #0d1117; margin-top: 1rem;"
+  style="width: 100%; height: 780px; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; margin-top: 1rem;"
 ></iframe>
 
 ---
@@ -192,7 +192,7 @@ Host             ← "что это за объект и кто за него о
 
 - **`Plant: Common Policy`** — только macros, conventions, технические теги класса. Никаких items, минимум зависимостей.
 - **`Plant: Agent Health`** — мониторинг самого Zabbix-агента: доступность, свежесть active checks, версия.
-- **`Plant: Zabbix Infrastructure`** — self-monitoring самого Zabbix-сервера (см. [главу 12 — Операционка](12_operations.md)). Это отдельный контур, потому что **основной Zabbix не может надёжно мониторить сам себя**.
+- **`Plant: Zabbix Infrastructure`** — self-monitoring самого Zabbix-сервера (см. [главу 12 — Эксплуатационные процедуры](12_operations.md)). Это отдельный контур, потому что **основной Zabbix не может надёжно мониторить сам себя**.
 
 Каждое из них узкое и не разрастается.
 
