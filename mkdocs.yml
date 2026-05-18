@@ -16,6 +16,7 @@ copyright: |
 
 theme:
   name: material
+  custom_dir: overrides
   language: ru
   features:
 #    - navigation.tabs
