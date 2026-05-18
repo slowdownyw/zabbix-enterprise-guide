@@ -89,7 +89,7 @@
 | **Scrapli** | https://github.com/carlmontanari/scrapli | Быстрее Netmiko, асинхронный |
 | **Net-SNMP** (snmpwalk) | https://www.net-snmp.org/ | Базовый SNMP-инструмент |
 
-### Веб-CMDB / inventory (если когда-нибудь созреют)
+### Веб-CMDB / inventory
 
 | Что | Ссылка | Зачем |
 |---|---|---|
