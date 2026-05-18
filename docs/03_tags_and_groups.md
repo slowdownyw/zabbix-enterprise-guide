@@ -72,7 +72,7 @@ scope=availability
 component=web
 ```
 
-Вот это уже не тупой алерт “Host unavailable”, а событие с контекстом.
+Вот это уже не пустой алерт “Host unavailable”, а событие с контекстом.
 
 ## 2. Что теги реально решают
 
@@ -117,13 +117,13 @@ Infra/Network
 
 Это невозможно нормально сделать только host groups, потому что один сервис может состоять из Windows, Linux, MSSQL, сетевого оборудования, web checks и backup checks.
 
-С тегами делаешь:
+С тегами делаем:
 
 ```text
 service=1c-erp
 ```
 
-и в одном представлении видишь:
+и в одном представлении видим:
 
 ```text
 srv-1c-app-01
@@ -149,7 +149,7 @@ router-dc-core
 Severity >= Warning → Telegram
 ```
 
-делаешь:
+делаем:
 
 ```text
 env=prod
@@ -460,7 +460,7 @@ severity >= Average
 
 ## 6. LLD: автоматическое тегирование айтемов и триггеров
 
-Вот это критично.
+Важно!
 
 LLD сам создаёт items/triggers из prototypes. Значит, теги надо задавать **на prototypes**, а не руками после discovery.
 
@@ -497,7 +497,7 @@ if_type={#IFTYPE}
 
 Zabbix прямо поддерживает LLD macros в trigger prototype tags; например, можно создать tag `scope:{#FSNAME}` или использовать LLD macro в значении тега. ([Zabbix][1])
 
-Практически это решает проблему “у меня 200 интерфейсов, как их разбирать”. Не руками. Discovery сам породил:
+Практически это решает проблему “у меня 200 интерфейсов, как их разбирать”. Не руками. Discovery сам создаст:
 
 ```text
 interface=ether1
@@ -506,7 +506,7 @@ interface=pppoe-out1
 interface=br-lan
 ```
 
-И вы потом фильтруете.
+И вы потом отфильтруете.
 
 ## 7. Как автоматически тегировать хосты
 
@@ -877,7 +877,7 @@ component=database
    filesystem/interface/wifi/etc.
 
 5. Переписать Telegram action:
-   не severity alone,
+   не только severity,
    а severity + tags.
 
 6. Сделать 2 Problems widget:
