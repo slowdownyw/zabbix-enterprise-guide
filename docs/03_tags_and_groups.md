@@ -922,6 +922,38 @@ Runbooks отвечают: что делать.
 
 ---
 
+## Официальные рекомендации Zabbix по тегам шаблонов
+
+Zabbix публикует [Template guidelines](https://www.zabbix.com/documentation/guidelines/en/template_guidelines) — официальный стандарт для разработки публичных шаблонов. При проектировании корпоративных шаблонов полезно от него отталкиваться.
+
+Ключевые рекомендации по тегам из официального стандарта:
+
+**Уровень шаблона** — два обязательных тега:
+
+| Тег | Назначение | Примеры значений |
+|---|---|---|
+| `class` | Тип отслеживаемой сущности | `application`, `database`, `hardware`, `network`, `os`, `service`, `storage`, `cloud` |
+| `target` | Название продукта | `apache`, `postgresql`, `cisco`, `windows` |
+
+Дополнительно: `subclass` — уточняет класс (`webserver`, `containers`).
+
+**Уровень элемента данных** — тег `component` с одним из значений:
+
+`cpu` · `memory` · `network` · `storage` · `power` · `os` · `system` · `application` · `kpi` · `raw`
+
+**Уровень триггера** — тег `scope` с одним из значений:
+
+`availability` · `performance` · `capacity` · `security` · `notice` · `compliance`
+
+**Уровень прототипа** — те же теги плюс LLD-макросы в значениях:
+
+```
+component: storage
+disk: {#DEVNAME}
+```
+
+Это совпадает с нашей корпоративной моделью тегов — `scope`, `component` уже используются в схеме. Отличие: в официальном стандарте `class`/`target` на уровне шаблона не используются в нашей схеме, потому что у нас другая RBAC-модель (через host groups, а не template tags).
+
 ## Резюме главы
 
 Главное, что нужно унести:
