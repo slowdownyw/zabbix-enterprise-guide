@@ -60,6 +60,8 @@ git push
 
 **Что это не даёт:** запрета на прямые изменения в UI. Дисциплина — организационная, не техническая.
 
+> ⚠️ Без нормализации scheduled auto-export превращает git в шум. Экспортированный YAML может содержать runtime-поля, изменяющиеся при каждом запросе (lastaccess, triggerid ordering и т.д.). Рекомендации: сортировать поля, убирать нестабильные runtime-значения, один объект — один файл со стабильным именем, использовать `git diff --stat` для фильтрации незначительных изменений.
+
 ---
 
 ### Уровень 2: Ansible community.zabbix
@@ -110,9 +112,10 @@ ansible-playbook zabbix_hosts.yml
 
 **Что это даёт:**
 - YAML в git = желаемое состояние
-- `ansible-playbook` применяет diff, не перезаписывает
 - Idempotent: можно гонять сколько угодно
 - CI/CD pipeline: merge request → ansible apply → Zabbix обновился
+
+> ⚠️ Поведение «только diff, не перезаписывает» зависит от конкретного модуля и его параметров. Перед применением в проде: читайте документацию модуля, запускайте `--check` (dry-run), пилотируйте на нескольких хостах, проверяйте что теги/шаблоны не удаляются деструктивно при неполном плейбуке.
 
 **Где трение:**
 - Не все объекты Zabbix покрыты модулями одинаково хорошо (шаблоны — хуже всего)
@@ -156,7 +159,7 @@ terraform plan   # показывает diff
 terraform apply  # применяет
 ```
 
-**Что это даёт:** настоящий GitOps. State в terraform.tfstate, план перед apply, полный контроль.
+**Что это даёт:** ближе к полноценному IaC. State в terraform.tfstate, `terraform plan` как diff перед apply.
 
 **Проблемы:**
 - Provider написан комьюнити, не официальный Zabbix
@@ -198,6 +201,20 @@ apply:
 
 ---
 
+## Что покрывает export/import — и что не покрывает
+
+`configuration.export` / `configuration.import` покрывают **шаблоны, хосты, группы, карты, экраны, медиа-типы**. Это полезный слепок, но не полный снимок Zabbix:
+
+- **Пользователи и роли** — через `user.get` / `usergroup.get`, отдельно
+- **Actions и escalation rules** — через `action.get`, не входят в configuration.export
+- **Authentication settings** (LDAP, SAML, MFA) — только через UI или отдельные API
+- **Global macros** — через `usermacro.get` с `globalmacro=true`
+- **Media и уведомления** — отчасти в export, но credentials/tokens — нет (см. secret handling ниже)
+
+Для **контролируемого применения** используй [`configuration.importcompare`](https://www.zabbix.com/documentation/current/en/manual/api/reference/configuration/importcompare) — API-метод, возвращающий diff между файлом и текущим состоянием без применения. Это аналог `terraform plan` для Zabbix-конфига.
+
+---
+
 ## Как убедиться что git = Zabbix (drift detection)
 
 Это отдельная задача, и без неё любой из подходов выше — «на доверии».
@@ -216,7 +233,7 @@ if diff:
 
 **Что это даёт:** если кто-то поменял в UI напрямую — через час приходит алерт. Менеджер видит. Это organizational enforcement через мониторинг.
 
-**Кстати:** можно поставить Zabbix action на audit log события (`EVENT.SOURCE=5` — configuration change) и слать в канал все изменения в UI. Тогда drift виден в реальном времени, не через час.
+**Кстати:** для контроля UI-изменений в реальном времени надёжнее периодически опрашивать [`auditlog.get`](https://www.zabbix.com/documentation/current/en/manual/api/reference/auditlog/get) через внешний скрипт и слать события в канал. Zabbix action на `EVENT.SOURCE=5` (internal event) технически возможен, но audit-события не всегда маппятся на действия достаточно надёжно — проверяйте поведение на вашей версии.
 
 ---
 
@@ -251,6 +268,38 @@ if diff:
 - Постепенно — всё через Ansible, ничего напрямую в UI
 
 **Почему не Terraform сейчас:** provider сырой для легаси-инсталляций, риски выше пользы. Ansible более зрелый для этой задачи.
+
+---
+
+## Secret handling — что не кладут в git
+
+Ни в каком из уровней GitOps следующее не хранится в plain git:
+
+| Что | Где хранить |
+|---|---|
+| API token Zabbix | Ansible Vault / CI/CD variables / Vault |
+| Пароли media types (email relay, webhook) | Ansible Vault / CI secrets |
+| PSK-ключи агентов | Отдельное хранилище секретов, не в YAML конфиге |
+| SNMP community strings | Ansible Vault / Vault |
+| Пароли LDAP/SAML binding | Только через Vault или CI environment variables |
+| Webhook credentials (Telegram token, etc.) | CI secrets или Ansible Vault |
+
+Инструменты: [Ansible Vault](https://docs.ansible.com/ansible/latest/vault_guide/), [SOPS](https://github.com/getsops/sops), [HashiCorp Vault](https://www.vaultproject.io/), переменные окружения CI. Регулярно ротируйте токены, особенно API token с правом `write`.
+
+---
+
+## Break-glass: прямые изменения в UI
+
+Даже при зрелом GitOps бывают ситуации когда нужно немедленно поменять порог, отключить триггер, изменить шаблон — прямо в UI, без pipeline.
+
+Политика break-glass:
+
+1. **Кто может:** только designated owner мониторинга (или on-call engineer с явным разрешением)
+2. **Что фиксируется:** причина в комментарии/тикете (инцидент, номер, что меняется)
+3. **Как потом:** в течение следующего рабочего дня — экспорт изменения в git, commit с ссылкой на инцидент
+4. **Контроль:** drift detection (см. выше) покажет расхождение. Без git-коммита после break-glass — это техдолг, который надо закрыть
+
+Без явной break-glass политики команда будет тайно менять UI и «забывать» коммитить, что разрушает весь GitOps.
 
 ---
 

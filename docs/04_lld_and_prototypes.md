@@ -14,7 +14,7 @@
 
 В Zabbix **prototype** — это не «прототип хоста в смысле черновик», а **заготовка для автоматического создания объектов через LLD — Low-Level Discovery**.
 
-Официально LLD умеет автоматически создавать items, triggers и graphs для сущностей внутри хоста: файловых систем, сетевых интерфейсов, CPU cores, SNMP OID, Windows services, VMware VM и т.д. Zabbix discovery rule получает JSON со списком найденных сущностей, например `{#IFNAME}=eth0`, `{#IFNAME}=lo`, и по prototype’ам создаёт реальные items/triggers/graphs под каждую найденную сущность. ([Zabbix][1])
+Официально LLD умеет автоматически создавать items, triggers, graphs, hosts и nested discovery rules для сущностей внутри хоста: файловых систем, сетевых интерфейсов, CPU cores, SNMP OID, Windows services, VMware VM и т.д. Zabbix discovery rule получает JSON со списком найденных сущностей, например `{#IFNAME}=eth0`, `{#IFNAME}=lo`, и по prototype’ам создаёт реальные items/triggers/graphs под каждую найденную сущность. ([Zabbix][1])
 
 ## На пальцах
 
@@ -69,9 +69,9 @@ Trigger: E: свободно < 10%
 | **Trigger prototype**   | Триггеры для найденных объектов                         |
 | **Graph prototype**     | Графики для найденных объектов                          |
 | **Host prototype**      | Новые хосты, например VM на гипервизоре                 |
-| **Discovery prototype** | Вложенное discovery, например БД → tablespaces → tables |
+| **Discovery prototype** | Вложенное discovery, например БД → tablespaces → tables. **⚠ Только Zabbix 7.x+; в 6.0 LTS отсутствует.** |
 
-Для item prototype LLD-макрос в ключе обязателен, чтобы Zabbix понимал, что это разные discovered-объекты, например `vfs.fs.size[{#FSNAME},pfree]`. ([Zabbix][2]) Trigger prototype создаётся аналогично item prototype и может иметь свои зависимости, но с ограничениями: например, он может зависеть от prototype из той же LLD rule или от обычного trigger. ([Zabbix][3])
+Для item prototype LLD-макрос в ключе обязателен — для уникальности создаваемых items; без него Zabbix не сможет отличить один discovered-объект от другого, например `vfs.fs.size[{#FSNAME},pfree]`. ([Zabbix][2]) Trigger prototype создаётся аналогично item prototype и может иметь свои зависимости, но с ограничениями: например, он может зависеть от prototype из той же LLD rule или от обычного trigger. ([Zabbix][3])
 
 ## Почему вы могли встречать этот термин, но не замечали его
 
@@ -142,11 +142,11 @@ Trigger prototype:
 
 | Область          | Что обнаруживать через LLD                           |
 | ---------------- | ---------------------------------------------------- |
-| Windows/Linux    | Диски, интерфейсы, services, процессы                |
+| Windows/Linux    | Диски, интерфейсы, services (⚠ только по allowlist/regex критичных служб — без фильтра получите сотни мусорных объектов), процессы |
 | Сеть             | Порты коммутаторов, VLAN, sensors, PSU/fan           |
 | VMware/Hyper-V   | VM, datastores, hypervisor entities                  |
 | MSSQL/PostgreSQL | Базы, tablespaces, replication slots                 |
-| 1С               | Кластеры, rphost-процессы, рабочие процессы, очереди |
+| 1С               | Кластеры, рабочие серверы, информационные базы, rphost count/health, сеансы, фоновые задания, лицензии HASP |
 | Veeam            | Jobs, repositories, backup sessions                  |
 | UPS/SNMP         | Батареи, входы/выходы, датчики                       |
 
@@ -173,6 +173,31 @@ Discover all network interfaces
 ```
 
 Поэтому в нормальной эксплуатации LLD всегда идёт с фильтрами, override’ами и lifecycle-политикой: что обнаруживать, что исключать, что делать с исчезнувшими объектами.
+
+### LLD filters и overrides
+
+**Filters** отсекают мусор на входе: regex или условие по LLD-макросу, чтобы не создавать объекты для loopback, docker-интерфейсов, temp-дисков и т.д.
+
+```text
+Filter:
+  {#FSNAME} not matches ^(/dev|/run|/sys|tmpfs)
+```
+
+**Overrides** позволяют менять severity, теги, enable state, interval по классу найденного объекта — без дублирования prototype’ов. Например: все найденные диски `C:` — High, остальные — Warning.
+
+### Жизненный цикл disappeared/lost resources
+
+Когда discovered объект исчезает (диск отмонтирован, интерфейс удалён, сервис остановлен), Zabbix не удаляет его сразу. Нужно явно настроить политику:
+
+```text
+Keep lost resources period:  N дней (0 = не удалять никогда)
+Disable lost resources:      отключить item/trigger без удаления
+Delete lost resources:       удалить объект после периода
+```
+
+Без настройки этого параметра база накапливает orphan-объекты, которые занимают место и могут давать false alerts. Для history/trends исчезнувших объектов настройте retention отдельно.
+
+> **Windows services через LLD:** настраивайте только с allowlist/regex по списку критичных служб. Discovery "всех служб" на сервере с 200+ Windows services создаст сотни бесполезных объектов и шум.
 
 ## Важная мысль
 

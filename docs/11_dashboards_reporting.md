@@ -44,7 +44,7 @@
 
 | Аудитория | Цель | Refresh | Формат | Где живёт |
 |---|---|---|---|---|
-| **NOC / дежурный** | Что горит сейчас, куда эскалировать | 10–30 сек | TV full-screen, dark mode | Grafana или Zabbix native |
+| **NOC / дежурный** | Что горит сейчас, куда эскалировать | 30–60 сек (10 сек создаёт нагрузку без практической пользы) | TV full-screen, dark mode | Grafana или Zabbix native |
 | **Per-service team** | Здоровье одного бизнес-сервиса | 1 мин | Web-страница, любое устройство | Grafana |
 | **Тимлид эксплуатации** | Тренды и горячие точки команды | 5 мин | Web + ежедневный дайджест | Grafana + Mattermost |
 | **CIO / руководитель ИТ** | Бизнес-витрина по сервисам | 1 час | Web + monthly PDF | Grafana + Email |
@@ -88,9 +88,9 @@
 
 **Технические требования:**
 - На большом экране (TV) в дежурке, full-screen
-- Auto-refresh 30 сек
+- Auto-refresh 30–60 сек (10 сек достаточно редко нужно и создаёт нагрузку на БД; calibrate под реальную потребность)
 - Только prod (`env=prod`), без шума test/dev
-- Серьёзные алерты (Disaster) — звуковое уведомление
+- Надёжный алертинг — через action/media/on-call (Telegram, SMS, звонок), а не через звуковой сигнал дашборда; дашборд — визуальная витрина, не система оповещения
 - Никаких CPU-графиков. Дежурный не разбирает CPU, он эскалирует
 
 **Где делать:** Grafana (если есть) или native Zabbix dashboard. Grafana предпочтительнее — гибче, лучше выглядит.
@@ -197,7 +197,7 @@
 #### 7. SCADA / OT (отдельный)
 
 **Категорически не смешивать с IT-дашбордами.** Аудитория — инженеры АСУ ТП и OT-команда; у этого контура своя логика.
-- ICMP latency до PLC-сегментов
+- ICMP latency до bridge-хостов и OPC-серверов (только согласованные read-only проверки; прямое зондирование PLC-сегментов — только после оценки риска с командой АСУ ТП)
 - Состояние bridge-хостов между IT и OT
 - Доступность OPC-сервера снаружи (TCP)
 - Никаких internal SCADA-метрик — для этого уже есть MasterScada/Wonderware
@@ -262,13 +262,14 @@ Host page (Zabbix)
 | Аспект | Native Zabbix Dashboards | Grafana |
 |---|---|---|
 | Скорость разработки | Средняя | Высокая |
-| Гибкость визуализации | Низкая | Высокая |
+| Гибкость визуализации | Средняя (в 6.x/7.x значительно улучшилась) | Высокая |
+| Готовые виджеты Zabbix | Problems, Problems by severity, Top hosts/items/triggers, SLA report, Web monitoring, Gauge, Navigator, Actions | Через datasource plugin |
 | Templating / variables | Базовый | Мощный |
 | Альтернативные datasources (Loki, Prometheus, БД) | Нет | Да |
 | Drill-down между дашбордами | Базовый | Гибкий, через Data Links |
 | Дополнительная инфраструктура | Не нужна | Нужен сервер Grafana |
-| Кому: NOC + быстрый старт | ✅ Да | Если уже есть Grafana — тоже |
-| Кому: длительная эксплуатация | Терпимо | ✅ Лучше |
+| Кому: NOC + быстрый старт | ✅ Да, особенно для Problems/Events | Если уже есть Grafana — тоже |
+| Кому: длительная эксплуатация | Достаточно для многих сценариев | ✅ Лучше для executive/drill-down |
 | Поддерживаемость через GitOps | Сложно (XML export) | Через JSON manifests + ConfigMaps |
 
 **Эмпирическое правило:**
@@ -277,7 +278,7 @@ Host page (Zabbix)
 - **Grafana** — для всех остальных дашбордов, особенно executive/SLA-витрин и drill-down паттернов
 - **Power BI / Tableau** — для отчётности уровня финансовой отчётности, **не** для оперативного мониторинга
 
-Grafana подключается к Zabbix через [официальный datasource plugin](https://github.com/grafana/grafana-zabbix). Плагин умеет читать items, triggers, events с фильтрацией по тегам.
+Grafana подключается к Zabbix через [Grafana Zabbix datasource plugin](https://github.com/grafana/grafana-zabbix) — плагин комьюнити, поддерживаемый совместно сообществом и Grafana Labs (не официальный продукт Zabbix LLC). Умеет читать items, triggers, events с фильтрацией по тегам.
 
 ### Что брать откуда
 
@@ -286,7 +287,7 @@ Grafana подключается к Zabbix через [официальный da
 | Real-time метрики | Zabbix (через Grafana datasource) |
 | Active problems / events | Zabbix Events |
 | История ≥ 3 месяцев | Постгрес репликa или TimescaleDB поверх Zabbix history |
-| SLA расчёты | Zabbix Services API + кастомные scripts |
+| SLA расчёты | Native Zabbix SLA report (Services → SLA report) + SLA report dashboard widget; для кастомных расчётов — Zabbix API |
 | Логи (parallel view) | Loki / ELK / Graylog как separate datasource |
 | Custom metadata (CMDB) | Внешняя БД (Netbox/iTop), читать в Grafana как SQL datasource |
 
@@ -342,6 +343,8 @@ send_email(to=cio_email, subject="ИТ-отчёт за май", attachment=pdf)
 ```
 
 Это разовая работа на 2-3 дня + потом cron-job. Никто отчёт не собирает руками после этого.
+
+> ⚠️ Для автоматических отчётов: используйте выделенный service account с минимальными правами (read-only); Zabbix API token и SMTP credentials — через secrets manager или CI variables, не в plain скрипте; проверьте что отчёт не содержит чувствительных данных (пароли, внутренние IP, данные КИИ) перед отправкой на внешние адреса.
 
 ---
 
@@ -424,7 +427,7 @@ send_email(to=cio_email, subject="ИТ-отчёт за май", attachment=pdf)
 - [ ] Каждый виджет имеет понятный заголовок и единицы измерения на оси
 - [ ] Цветовая дисциплина соблюдена (красный = действовать, жёлтый = смотреть)
 - [ ] Технические метрики (CPU/RAM) — только на per-team дашбордах, не на executive
-- [ ] Виджеты читают **теги**, не хардкод имён хостов
+- [ ] Виджеты читают **теги** как основной источник (не хардкод имён хостов); явный список критичных компонентов допустим как часть service definition, если тегов недостаточно
 
 **Данные:**
 

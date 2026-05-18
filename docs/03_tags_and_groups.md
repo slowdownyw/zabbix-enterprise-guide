@@ -224,17 +224,23 @@ Host: 10.20.5.239
 
 ### 5. SLA / Services
 
-Если вы хотите считать “доступность 1С”, Zabbix должен понять, какие problems относятся к 1С. Для этого используются service tags и problem tags: service может матчить проблемы по тегам, а service tags могут использоваться для service actions и SLA. ([Zabbix][1])
+Если вы хотите считать “доступность 1С”, Zabbix должен понять, какие problems относятся к 1С.
 
-То есть:
+Здесь важно разделить два разных понятия:
+
+- **Event tag `service=1c-erp`** — это методический тег события, который мы ставим на хосте/триггере для dashboards и routing. Сам по себе он не влияет на Zabbix Services/SLA.
+- **Zabbix Service tags** — теги, которые настраиваются непосредственно на объекте типа **Service** (раздел Services). Именно они используются для сопоставления SLA и сервисных правил.
+
+Для связи Problems с сервисом нужны **problem tags** в настройках Service: Zabbix сопоставляет Problems по тегам, и только после этого проблемы с тегом `service=1c-erp` начинают влиять на состояние сервиса. ([Zabbix][1])
 
 ```text
 Business service: 1C-ERP
 Problem tag match:
-  service=1c-erp
+  tag: service
+  value: 1c-erp
 ```
 
-И любые проблемы с этим тегом могут влиять на состояние сервиса.
+> Проблемы с этим тегом влияют на состояние сервиса **только после** настройки сервисных правил/problem tags в разделе Services.
 
 ### 6. Maintenance точечно, а не топором
 
@@ -245,6 +251,8 @@ maintenance tag: scope=backup
 ```
 
 и вы подавляете только backup-проблемы, а не вообще всё по серверу.
+
+> **Важно:** Maintenance в Zabbix всегда задаётся на hosts/host groups — это обязательная область применения. Теги работают как **фильтр подавления проблем внутри этой области**. Настроить maintenance "только по тегу" без указания host или host group нельзя.
 
 ### 7. Контроль прав на Problems
 
@@ -422,14 +430,9 @@ impact=rpo-risk
 Очень полезный паттерн:
 
 ```text
-notify=yes/no
-```
-
-или лучше:
-
-```text
 notification=active
 notification=dashboard-only
+notification=none
 ```
 
 Например, ICMP loss на Wi-Fi-клиенте:
@@ -544,6 +547,8 @@ component=filesystem
 Для активных агентов можно использовать autoregistration: ранее неизвестный active agent обращается к серверу, и Zabbix автоматически добавляет его в мониторинг. Autoregistration action может добавлять хост, класть его в host group, линковать templates и т.д.; условия можно строить по hostname/host metadata. ([Zabbix][4])
 
 В current API action operation есть операции `add host tags` и `remove host tags`, то есть при discovery/autoregistration можно автоматизировать и присвоение host tags. ([Zabbix][3])
+
+> **Версионная оговорка:** операции `add/remove host tags` в autoregistration actions отсутствуют в Zabbix **6.0 LTS**. Они появились в более новых версиях ветки 6.x/7.x. Если вы на 6.0 LTS — назначение host tags через autoregistration требует API/скрипта или обновления до версии с поддержкой этих операций.
 
 На агенте:
 
@@ -796,6 +801,8 @@ segment=it|ot|dmz|home|cloud
 os_family=windows|linux|network|storage|hypervisor|appliance
 ```
 
+> **Замечание:** значения `os_family=network|storage|hypervisor|appliance` смешивают семейство ОС и класс устройства. Если в проекте это вызывает путаницу, рассмотрите разделение на два тега: `os_family=windows|linux|...` и `device_class=server|network|storage|appliance` — или используйте общий `platform` с произвольными значениями.
+
 ### Host tags, опциональные
 
 ```text
@@ -841,7 +848,7 @@ serial_number=...
 
 Не надо использовать tags как замену dependencies. Если упал свитч и за ним 50 хостов, это решается trigger dependencies, а не тегами.
 
-Не надо смешивать `owner` и `service`. Один сервис может иметь несколько owner-команд по компонентам. Например:
+Не надо смешивать `owner` и `service`. `owner` на уровне хоста — это **ответственная команда за объект** (тот, кто обслуживает именно этот хост/компонент). Один сервис может иметь несколько owner-команд по компонентам. Например:
 
 ```text
 service=1c-erp
@@ -856,6 +863,8 @@ service=1c-erp
 owner=dba
 component=database
 ```
+
+Для дополнительной маршрутизации в многокомандных сервисах можно добавить `resolver_group` или `support_team` на уровне trigger tag — это позволяет настроить action "при component=database слать dba-oncall".
 
 Это нормально.
 

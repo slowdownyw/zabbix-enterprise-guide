@@ -120,7 +120,7 @@ Host: 1c-app-warehouse-01
 - ⚡ **Не дублируются OS-метрики.** CPU/RAM/Disk собираются один раз в `Windows Base`. Application templates их не повторяют.
 - 🔄 **Изоляция апгрейдов.** Можно обновить `Plant: 1C App Server` без риска сломать OS-метрики.
 - 🧪 **Тестовые стенды = production-шаблоны минус один слой.** Тестовый сервер 1С — те же шаблоны, кроме `Synthetic`. Один список линкуемых шаблонов = одна разница.
-- 📊 **RBAC по композиции.** Команда DBA получает права на `Plant: MSSQL for 1C`; команда 1С — на `Plant: 1C App Server`; они не наступают друг другу на ноги.
+- 📊 **Организационный ownership по композиции.** В Zabbix права строятся через user roles и host groups, не через шаблоны напрямую. Но шаблонная декомпозиция отражает организационный ownership в Git/review: команда DBA отвечает за `Plant: MSSQL for 1C`, команда 1С — за `Plant: 1C App Server`. Это помогает контролировать изменения через code review, а не через UI-права.
 
 **Антипаттерн:** один монолитный шаблон `Plant: 1C Everything`, в котором лежит и `vfs.fs.size`, и `rphost discovery`. Такой шаблон через полгода непригоден к модификации.
 
@@ -129,8 +129,8 @@ Host: 1c-app-warehouse-01
 Теги в Zabbix задаются на разных уровнях, и каждый уровень несёт свой смысл:
 
 ```text
-Service          ← "это бизнес-сервис"            (Zabbix Service, опционально)
-   ↑
+Zabbix Service   ← "это бизнес-сервис"   (Service tags для SLA/service actions;
+   ↑                                       Problem tags для сопоставления Problems с сервисом)
 Trigger / Trigger prototype  ← "что именно сломалось и что делать"
    ↑
 Item / Item prototype        ← "что измеряется"
@@ -191,7 +191,7 @@ Host             ← "что это за объект и кто за него о
 
 **Правильно — разделить «common» по ролям:**
 
-- **`Plant: Common Policy`** — только macros, conventions, технические теги класса. Никаких items, минимум зависимостей.
+- **`Plant: Common Policy`** — только macros, conventions, технические теги класса. Никаких items, минимум зависимостей. **Предупреждение:** если несколько шаблонов определяют одинаковые macros с разными значениями, приоритет определяется порядком линкования и уровнем (host > template). Задокументируйте правила macro precedence и ведите drift-контроль, чтобы не получить неожиданного значения порога.
 - **`Plant: Agent Health`** — мониторинг самого Zabbix-агента: доступность, свежесть active checks, версия.
 - **`Plant: Zabbix Infrastructure`** — self-monitoring самого Zabbix-сервера (см. [главу 12 — Эксплуатационные процедуры](12_operations.md)). Это отдельный контур, потому что **основной Zabbix не может надёжно мониторить сам себя**.
 
@@ -216,7 +216,7 @@ Host             ← "что это за объект и кто за него о
 | `component` | **Item / Trigger / Prototype** | `component=filesystem`, `component=rphost` | Что именно сломалось |
 | `scope` | **Item / Trigger / Prototype** | `scope=capacity`, `scope=availability` | Тип проблемы |
 | `impact` | **Trigger** | `impact=rpo-risk`, `impact=outage` | Смысл проблемы для эксплуатации |
-| `notification` | **Trigger** | `notification=active`, `notification=silent` | Управляет action routing |
+| `notification` | **Trigger** | `notification=active`, `notification=dashboard-only`, `notification=none` | Управляет action routing |
 | `runbook` | **Trigger** или URL в description | `runbook=rb-1c-rphost-down` | Привязка к конкретному сценарию реагирования |
 
 ### Три простых правила
@@ -227,7 +227,7 @@ Host             ← "что это за объект и кто за него о
 
 > **Правило 2.** Item / trigger / prototype tags отвечают на вопрос **«что именно произошло»**: component, scope, impact, notification, runbook.
 
-> **Правило 3.** Service tags отвечают на вопрос **«как это влияет на бизнес-сервис»**: участвуют в SLA-расчётах, попадают в business-view дашборды.
+> **Правило 3.** Разделяйте два уровня: event tag `service=<name>` связывает событие с бизнес-сервисом для routing/dashboards, а Zabbix Service tags используются нативным механизмом Services/SLA.
 
 ### Где НЕ ставить `service`
 
@@ -244,11 +244,12 @@ Host             ← "что это за объект и кто за него о
 Когда trigger срабатывает, Zabbix создаёт **PROBLEM event**. К нему **наследуются теги со всех слоёв**:
 
 ```text
-Host tags                  ──┐
-Template tags              ──┤
-Item / Item prototype tags ──┼──► PROBLEM event tags (все вместе)
-Trigger tags               ──┤
-Trigger prototype tags     ──┘
+Host tags                      ──┐
+Template tags                  ──┤
+Item / Item prototype tags     ──┤
+Web scenario tags              ──┼──► PROBLEM event tags (все вместе)
+Trigger tags                   ──┤
+Trigger prototype tags         ──┘
 ```
 
 То есть в момент срабатывания событие имеет **полный набор тегов**. Это даёт два важных следствия:
@@ -268,9 +269,9 @@ THEN
 
 Это понятно, поддерживаемо, расширяемо. Добавился новый сервис — добавили строку в action.
 
-**2. Tag conflicts разрешаются по приоритету.** Если один тег приходит с двух уровней (например, `criticality=P1` на хосте и `criticality=P2` на trigger), Zabbix не объединяет их — он создаёт **два значения для одного тега**. Это нужно учитывать: либо тег задаётся на одном уровне, либо явно различается (`host:criticality` vs `trigger:criticality`).
+**2. Разрешение конфликтов тегов.** Zabbix не использует «приоритет»: одинаковые пары `tag:value` со всех уровней склеиваются (дублей не будет). Но одинаковые имена тегов с **разными** значениями (`criticality=P1` на хосте и `criticality=P2` на trigger) остаются как два разных event tag — они оба попадут в событие. Это нужно учитывать при фильтрации в action conditions.
 
-Практически: **избегайте дубликатов**. Один тег — один уровень.
+Практически: **задавайте тег на одном уровне**. Один тег — один уровень — одно значение.
 
 ---
 
@@ -345,7 +346,7 @@ Infra/Windows
 Locations/DC-Main
 ```
 
-Три группы — это **минимум, разные оси**. Группа `Applications/1C` даёт права команде 1С на этот хост. `Infra/Windows` — техническая навигация для системных инженеров. `Locations/DC-Main` — для разделения по площадкам.
+Три группы — это **достаточный набор для RBAC и навигации в данном примере**. Число групп определяется потребностями RBAC и структурой команды, не фиксированным числом. Группа `Applications/1C` даёт права команде 1С на этот хост. `Infra/Windows` — техническая навигация для системных инженеров. `Locations/DC-Main` — для разделения по площадкам.
 
 ### Шаг 2. Host tags
 
@@ -481,12 +482,12 @@ Recovery operations:
 | Подсистема | Какие теги использует | Пример |
 |---|---|---|
 | **Action routing** | host tags + trigger tags | `IF service=1c-erp AND notification=active THEN Telegram` |
-| **Дашборды (Grafana / Zabbix Dashboards)** | host tags + Service tags | `WHERE service IN ('1c-erp','mssql-1c','exchange-mailbox')` |
-| **Service tree / Business view** | Service tags | дерево бизнес-сервисов с их статусами |
-| **SLA calculation** | Service tags | расчёт `service-availability` за период |
+| **Дашборды (Grafana / Zabbix Dashboards)** | host/event tags (`service`, `env`, `owner`, `component`) | `WHERE service IN ('1c-erp','mssql-1c','exchange-mailbox')` |
+| **Service tree / Business view** | Zabbix Services + problem tags | дерево бизнес-сервисов с их статусами |
+| **SLA calculation** | Zabbix Service tags + SLA policy | расчёт `service-availability` за период |
 | **Отчёты для CIO** | service + criticality + owner | «доступность по сервисам, по командам, по площадкам» |
 | **Capacity reports** | scope=capacity, component=* | «топ-10 ресурсов по росту утилизации за квартал» |
-| **Maintenance windows** | host groups + service tags | «freeze всех `service=1c-erp` хостов с 02:00 до 04:00» |
+| **Maintenance windows** | host groups + maintenance problem tags | «freeze всех хостов сервиса 1C-ERP с подавлением problems по `service=1c-erp`/`scope=...`» |
 | **RBAC** | host groups | права в Zabbix UI |
 
 **Ключевое правило:**
@@ -570,7 +571,7 @@ Recovery operations:
 
 - [ ] Trigger expression в актуальном Zabbix синтаксисе (`last(/host/key)>X`)
 - [ ] Trigger имеет теги `component=`, `scope=`, `impact=`, `notification=`, `runbook=`
-- [ ] Trigger dependencies настроены (сервисный trigger подавляет компонентные)
+- [ ] Trigger dependencies настроены там, где есть понятная причинно-следственная связь (core network → downstream, proxy → агенты) — **не** как "синтетика подавляет всё": синтетика — верхнеуровневый симптом, а не root cause; для сервисной иерархии используйте Zabbix Services + problem tags
 - [ ] Каждый Disaster и 80% High имеют URL на runbook
 
 **Events / Actions:**
@@ -582,8 +583,8 @@ Recovery operations:
 **Reuse:**
 
 - [ ] Дашборды читают те же теги, что использует action routing
-- [ ] SLA-отчёты считаются по `service` тегу, не по списку хостов
-- [ ] Maintenance windows используют те же service tags
+- [ ] SLA-отчёты считаются через Zabbix Services/SLA policy, а Problems связываются с сервисами по problem tags
+- [ ] Maintenance windows имеют host/host group scope и, при необходимости, используют problem tags как фильтр подавления
 
 Если все пункты отмечены — дизайн **скорее всего** консистентен. Полная валидация — только в проде, через пару итераций.
 

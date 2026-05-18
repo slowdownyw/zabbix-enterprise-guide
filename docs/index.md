@@ -24,7 +24,7 @@
 - **Внедрение Zabbix с нуля или с легаси** → начните с [Implementation Playbook](16_implementation_playbook.md), затем используйте [reference 90-day roadmap](07_implementation_roadmap.md)
 - **Архитектура и масштабирование** → [Слои и развёртывание](06_architecture.md)
 - **Эксплуатация уже работающего Zabbix** → [Эксплуатационная модель](12_operations.md) + [Runbooks](09_runbooks.md)
-- **Хочется готовых шаблонов** → [Требования к шаблонам](13_template_requirements.md) с честным дисклеймером
+- **Нужно проектировать или принимать шаблоны** → [Требования к шаблонам](13_template_requirements.md) с честным дисклеймером
 
 ---
 
@@ -39,6 +39,19 @@
 | 🟣 | **Production-tested** — проверено в продакшне |
 
 В шапке каждой главы — её статус.
+
+**Критерии валидации статусов ⚫ / 🟣:**
+
+| Параметр | Lab-tested | Production-tested |
+|---|---|---|
+| Версия Zabbix | указана явно | указана явно |
+| Размер стенда | hosts/items/NVPS | реальная нагрузка |
+| БД | тип и версия | тип и версия |
+| Proxy | да/нет | да/нет |
+| HA | не требуется | желательно |
+| Сценарий отказа | базовый smoke | подтверждён в поле |
+
+Если глава не несёт ни ⚫, ни 🟣 — считайте её непроверенной на конкретной инфраструктуре.
 
 ---
 
@@ -56,8 +69,8 @@
 ### Часть II. Архитектура и внедрение
 
 - [Слои и развёртывание](06_architecture.md) · 🟡
-- [Reference 90-day roadmap внедрения](07_implementation_roadmap.md) · 🟡
 - [Implementation Playbook](16_implementation_playbook.md) · 🟡
+- [Reference 90-day roadmap внедрения](07_implementation_roadmap.md) · 🟡
 - [GitOps для Zabbix](08_gitops_for_zabbix.md) · 🟢
 
 ### Часть III. Эксплуатация

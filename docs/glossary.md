@@ -49,7 +49,7 @@
 | **Disaster inflation** | Ситуация, когда слишком много триггеров имеют severity Disaster, и настоящий Disaster теряется в шуме. | [Severity](02_severity_model.md), [Anti-patterns](15_antipatterns.md) |
 | **Silent mode** | Крайность, когда уведомления выключены или игнорируются, и команда узнаёт о проблемах от пользователей. | [Severity](02_severity_model.md) |
 | **Action** | Правило Zabbix, которое решает, кому и куда отправить уведомление или какую операцию выполнить. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
-| **Operation** | Конкретное действие внутри Action: отправить сообщение, создать тикет, выполнить webhook. | [Многоуровневая модель](05_layered_design.md), [Roadmap](07_implementation_roadmap.md) |
+| **Operation** | Конкретное действие внутри Action: отправить сообщение через media type, выполнить remote command. Webhook в Zabbix реализуется как media type/интеграция и вызывается через операцию отправки сообщения. | [Многоуровневая модель](05_layered_design.md), [Roadmap](07_implementation_roadmap.md) |
 | **Recovery operation** | Действие при восстановлении: уведомить о RESOLVED, закрыть тикет, обновить статус. | [Многоуровневая модель](05_layered_design.md), [Операционка](12_operations.md) |
 | **Escalation** | Передача инцидента дальше по цепочке: L1, L2, профильная команда, руководитель. | [Архитектура](06_architecture.md), [Операционка](12_operations.md) |
 | **Escalation matrix** | Документированная схема: кто получает P1/P2, через сколько минут, кто резервный контакт. | [Операционка](12_operations.md), [Implementation Playbook](16_implementation_playbook.md) |
@@ -79,7 +79,8 @@
 | **Item tag** | Тег на уровне item: что измеряется, например filesystem, rphost, backup age. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
 | **Trigger tag** | Тег на уровне trigger: что произошло и как реагировать: scope, component, impact, notification, runbook. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
 | **Prototype tag** | Тег, заданный на prototype, чтобы discovered item/trigger сразу наследовал правильный смысл. | [LLD](04_lld_and_prototypes.md), [Теги](03_tags_and_groups.md) |
-| **Service tag** | Тег, связывающий объект или событие с бизнес-сервисом. Используется для dashboards, SLA, routing. | [Теги](03_tags_and_groups.md), [SLA](10_sla_service_catalog.md) |
+| **Event tag `service`** | Методический тег события (`service=<name>`), связывающий объект или событие с бизнес-сервисом. Используется для dashboards, routing и фильтрации. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
+| **Zabbix Service tag** | Тег, настраиваемый непосредственно на объекте типа **Service** в Zabbix (раздел Services). Используется для сопоставления SLA и сервисных правил; не то же самое, что event tag `service=` на хосте/триггере. | [SLA](10_sla_service_catalog.md), [Теги](03_tags_and_groups.md) |
 | **env** | Среда: prod, test, dev, dr. Нужна для фильтрации, routing и maintenance. | [Теги](03_tags_and_groups.md), [Roadmap](07_implementation_roadmap.md) |
 | **location** | Площадка или логическое место: dc-main, plant-main, remote-site. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
 | **segment** | Сетевой или организационный сегмент: it, ot, dmz, cloud. Влияет на права, безопасность и архитектуру proxy. | [Теги](03_tags_and_groups.md), [Архитектура](06_architecture.md) |
@@ -94,7 +95,7 @@
 | **Service tree** | Дерево бизнес-сервисов и зависимостей, через которое можно показывать статус сервиса, а не отдельных хостов. | [Многоуровневая модель](05_layered_design.md), [SLA](10_sla_service_catalog.md) |
 | **Event context** | Полный набор данных в событии: service, owner, env, component, impact, runbook, location. | [Многоуровневая модель](05_layered_design.md), [Теги](03_tags_and_groups.md) |
 | **Tag-based routing** | Маршрутизация уведомлений по тегам события, а не по имени host group или trigger. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
-| **Maintenance by tags** | Подавление не всего хоста, а конкретного типа проблем через теги. | [Теги](03_tags_and_groups.md), [Операционка](12_operations.md) |
+| **Maintenance by tags** | Подавление конкретного типа проблем через теги. Maintenance задаётся на hosts/host groups, а теги используются как фильтр подавления проблем внутри заданной области. | [Теги](03_tags_and_groups.md), [Операционка](12_operations.md) |
 
 ---
 
@@ -127,7 +128,7 @@
 | **Dependent item** | Item, который получает значение из master item через preprocessing. Удобно для API/JSON и тяжёлых запросов. | [Требования к шаблонам](13_template_requirements.md) |
 | **UserParameter** | Пользовательский ключ агента Zabbix, который запускает локальный скрипт или команду. | [Требования к шаблонам](13_template_requirements.md), [examples/userparameters](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/userparameters/README.md) |
 | **Trigger expression** | Выражение Zabbix, определяющее PROBLEM/OK. Должно быть валидировано под реальные keys и версии Zabbix. | [Требования к шаблонам](13_template_requirements.md), [examples/triggers](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/triggers/README.md) |
-| **Runbook URL** | Ссылка на инструкцию, обычно в `{TRIGGER.URL}` или description. | [Severity](02_severity_model.md), [Runbooks](09_runbooks.md), [Многоуровневая модель](05_layered_design.md) |
+| **Runbook URL** | Ссылка на инструкцию, хранящаяся в поле **Menu entry URL** триггера; в уведомлениях доступна через макрос `{TRIGGER.URL}`. | [Severity](02_severity_model.md), [Runbooks](09_runbooks.md), [Многоуровневая модель](05_layered_design.md) |
 
 ---
 
@@ -147,12 +148,12 @@
 | **OT** | Operational Technology: промышленный контур, где активное вмешательство и сканирование могут быть опасны. | [Манифест](00_manifesto.md), [Архитектура](06_architecture.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **SCADA** | Системы диспетчерского управления и сбора данных. В книге рассматриваются как осторожный, часто read-only контур мониторинга. | [Манифест](00_manifesto.md), [Архитектура](06_architecture.md), [Требования к шаблонам](13_template_requirements.md) |
 | **КИИ** | Критическая информационная инфраструктура. В книге важна как архитектурное ограничение: нельзя “просто поставить агент”. | [Манифест](00_manifesto.md), [Архитектура](06_architecture.md) |
-| **Read-only monitoring** | Модель мониторинга без активного вмешательства: ICMP/TCP, passive traffic, read-only API, согласованные точки. | [Архитектура](06_architecture.md), [Требования к шаблонам](13_template_requirements.md) |
+| **Read-only monitoring** | Модель мониторинга без установки агента и без выполнения команд на целевой системе. Конкретные методы (ICMP/TCP, SNMP, read-only API) остаются активными проверками и согласуются с ИБ/владельцем отдельно. | [Архитектура](06_architecture.md), [Требования к шаблонам](13_template_requirements.md) |
 | **Passive discovery** | Обнаружение через пассивный анализ трафика или read-only источники, особенно в OT/SCADA. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **HA** | High availability. Полезна, но не исправляет плохую модель тегов, шаблонов и реакции. | [Архитектура](06_architecture.md), [ADR deployment](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-001-deployment-model.md) |
-| **PostgreSQL для Zabbix** | Рекомендуемая БД для зрелой инсталляции, особенно с партиционированием и контролем history/trends. | [Архитектура](06_architecture.md), [Roadmap](07_implementation_roadmap.md) |
-| **Partitioning** | Партиционирование таблиц history/trends, чтобы БД не разрасталась в неуправляемый монолит. | [Roadmap](07_implementation_roadmap.md), [Anti-patterns](15_antipatterns.md) |
-| **Housekeeping** | Механизм очистки истории в Zabbix. В больших инсталляциях часто требует пересмотра и замены партициями. | [Roadmap](07_implementation_roadmap.md), [Операционка](12_operations.md) |
+| **PostgreSQL для Zabbix** | Часто предпочтительный выбор для зрелой/крупной инсталляции при наличии компетенций: хорошо работает с партиционированием и контролем history/trends. | [Архитектура](06_architecture.md), [Roadmap](07_implementation_roadmap.md) |
+| **Partitioning** | Партиционирование таблиц history/trends, чтобы БД не разрасталась в неуправляемый монолит. В Zabbix 6/7 с PostgreSQL возможны три подхода: ручное партиционирование, TimescaleDB (hypertables/compression) и штатный housekeeping — выбор зависит от NVPS и компетенций. | [Roadmap](07_implementation_roadmap.md), [Anti-patterns](15_antipatterns.md) |
+| **Housekeeping** | Механизм очистки истории в Zabbix. В больших инсталляциях часто требует пересмотра: при TimescaleDB/партиционировании штатный housekeeping настраивается или отключается отдельно. | [Roadmap](07_implementation_roadmap.md), [Операционка](12_operations.md) |
 | **History** | Сырые значения метрик за короткий/средний период. | [Roadmap](07_implementation_roadmap.md), [ADR retention](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-005-retention-and-sizing-baseline.md) |
 | **Trends** | Агрегированные значения для долгосрочного хранения и отчётности. | [Roadmap](07_implementation_roadmap.md), [ADR retention](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-005-retention-and-sizing-baseline.md) |
 | **NVPS** | New values per second: поток новых значений в Zabbix. Важен для sizing server и БД. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
