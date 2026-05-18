@@ -124,7 +124,7 @@
                                           ↓
 КАНАЛЫ:           NOC TV · Grafana · Telegram · Email · SMS (только P1) · Webhook · Auto Reports → CIO
                                           ↓
-РЕАКЦИЯ:          ServiceDesk · Runbooks · On-call Roster · Эскалация L1→L2→CIO · Audit Git
+РЕАКЦИЯ:          ServiceDesk · Runbooks · Список дежурных · Эскалация L1→L2→CIO · Audit Git
                                           ↓
 ИНЦИДЕНТ:         Acknowledge → Диагностика → Resolve → Постмортем
                                           ↓

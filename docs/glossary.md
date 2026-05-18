@@ -45,7 +45,7 @@
 | **Information** | Событие, которое полезно знать, но на которое не реагируют как на инцидент. | [Severity](02_severity_model.md) |
 | **Impact** | Влияние проблемы на сервис: outage, degradation, capacity risk, data loss risk. Часто фиксируется тегом. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
 | **Scope** | Тип проблемы: availability, performance, capacity, backup, security, quality. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
-| **Alert fatigue** | Состояние, когда алертов так много, что команда перестаёт им доверять и пропускает реальный инцидент. | [Severity](02_severity_model.md), [Операционка](12_operations.md), [Anti-patterns](15_antipatterns.md) |
+| **Усталость от алертов** (Alert fatigue) | Состояние, когда алертов так много, что команда перестаёт им доверять и пропускает реальный инцидент. | [Severity](02_severity_model.md), [Операционка](12_operations.md), [Anti-patterns](15_antipatterns.md) |
 | **Disaster inflation** | Ситуация, когда слишком много триггеров имеют severity Disaster, и настоящий Disaster теряется в шуме. | [Severity](02_severity_model.md), [Anti-patterns](15_antipatterns.md) |
 | **Silent mode** | Крайность, когда уведомления выключены или игнорируются, и команда узнаёт о проблемах от пользователей. | [Severity](02_severity_model.md) |
 | **Action** | Правило Zabbix, которое решает, кому и куда отправить уведомление или какую операцию выполнить. | [Теги](03_tags_and_groups.md), [Многоуровневая модель](05_layered_design.md) |
@@ -53,7 +53,7 @@
 | **Recovery operation** | Действие при восстановлении: уведомить о RESOLVED, закрыть тикет, обновить статус. | [Многоуровневая модель](05_layered_design.md), [Операционка](12_operations.md) |
 | **Escalation** | Передача инцидента дальше по цепочке: L1, L2, профильная команда, руководитель. | [Архитектура](06_architecture.md), [Операционка](12_operations.md) |
 | **Escalation matrix** | Документированная схема: кто получает P1/P2, через сколько минут, кто резервный контакт. | [Операционка](12_operations.md), [Implementation Playbook](16_implementation_playbook.md) |
-| **On-call** | Дежурство или роль, которая обязана реагировать на активные уведомления. | [Runbooks](09_runbooks.md), [Операционка](12_operations.md) |
+| **Дежурство** (On-call) | Дежурство или роль, которая обязана реагировать на активные уведомления. | [Runbooks](09_runbooks.md), [Операционка](12_operations.md) |
 | **NOC** | Операционный центр или дежурная функция, которая смотрит активные проблемы, подтверждает события и эскалирует. | [Дашборды](11_dashboards_reporting.md), [Операционка](12_operations.md) |
 | **Acknowledge** | Подтверждение, что событие взято в работу. Не равно исправлению проблемы. | [Дашборды](11_dashboards_reporting.md), [Операционка](12_operations.md) |
 | **Auto-resolve** | Событие восстановилось само. Полезно для анализа шума и проверки, были ли реальные действия. | [Дашборды](11_dashboards_reporting.md), [Операционка](12_operations.md) |
@@ -158,7 +158,7 @@
 | **Trends** | Агрегированные значения для долгосрочного хранения и отчётности. | [Roadmap](07_implementation_roadmap.md), [ADR retention](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-005-retention-and-sizing-baseline.md) |
 | **NVPS** | New values per second: поток новых значений в Zabbix. Важен для sizing server и БД. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Sizing** | Оценка нагрузки, ресурсов, БД, proxy, history/trends, LLD и числа checks до внедрения. | [Implementation Playbook](16_implementation_playbook.md), [ADR retention](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/adr-005-retention-and-sizing-baseline.md) |
-| **Capacity planning** | Регулярное прогнозирование ресурсов: диски, CPU, лицензии, БД, каналы, рост items. | [Операционка](12_operations.md), [Дашборды](11_dashboards_reporting.md) |
+| **Планирование ёмкости** (Capacity planning) | Регулярное прогнозирование ресурсов: диски, CPU, лицензии, БД, каналы, рост items. | [Операционка](12_operations.md), [Дашборды](11_dashboards_reporting.md) |
 
 ---
 
@@ -172,9 +172,9 @@
 | **Known error** | Известная проблема с описанным workaround или устойчивым способом диагностики. | [Runbooks](09_runbooks.md), [Архитектура](06_architecture.md) |
 | **Postmortem** | Разбор инцидента после восстановления: timeline, root cause, impact, action items. | [Архитектура](06_architecture.md), [Операционка](12_operations.md) |
 | **Blameless postmortem** | Постмортем без поиска виноватого: цель — улучшить систему, runbooks, thresholds, шаблоны и процессы. | [Архитектура](06_architecture.md), [Операционка](12_operations.md) |
-| **Action item** | Конкретное улучшение после инцидента: владелец, срок, проверяемый результат. | [Операционка](12_operations.md), [Implementation Playbook](16_implementation_playbook.md) |
+| **Задача / Пункт плана** (Action item) | Конкретное улучшение после инцидента: владелец, срок, проверяемый результат. | [Операционка](12_operations.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Maintenance window** | Плановое окно, в котором часть alerting подавляется или меняет правила реакции. | [Операционка](12_operations.md), [Теги](03_tags_and_groups.md) |
-| **Freeze calendar** | Периоды, когда изменения запрещены или ограничены: закрытие месяца, производственный пик, годовой баланс. | [Операционка](12_operations.md), [SLA](10_sla_service_catalog.md) |
+| **Календарь заморозки** (Freeze calendar) | Периоды, когда изменения запрещены или ограничены: закрытие месяца, производственный пик, годовой баланс. | [Операционка](12_operations.md), [SLA](10_sla_service_catalog.md) |
 | **Change request** | Формальная заявка на изменение, часто связанная с maintenance window и ServiceDesk. | [Операционка](12_operations.md), [GitOps](08_gitops_for_zabbix.md) |
 | **ServiceDesk / ITSM** | Система учёта инцидентов, изменений и SLA. Zabbix создаёт сигнал, ITSM хранит процесс. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Ticket** | Запись инцидента или задачи в ITSM. Не все alerts должны становиться тикетами. | [Теги](03_tags_and_groups.md), [Roadmap](07_implementation_roadmap.md) |
@@ -205,13 +205,13 @@
 | Термин | Коротко | Где читать |
 |---|---|---|
 | **Discovery** | Фаза инвентаризации: что есть, что мониторится, где gaps, кто владельцы, какие события шумят. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
-| **Gap** | Разрыв между тем, что должно мониториться, и тем, что реально покрыто. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
+| **Пробел / Зона непокрытия** (Gap) | Разрыв между тем, что должно мониториться, и тем, что реально покрыто. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Coverage** | Доля хостов, сервисов или проверок, покрытых мониторингом и обязательными тегами. | [Roadmap](07_implementation_roadmap.md), [Дашборды](11_dashboards_reporting.md) |
 | **Pilot** | Ограниченное внедрение на выбранном сервисе/площадке для проверки модели до rollout. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Rollout** | Раскатка изменений волнами после pilot. | [Roadmap](07_implementation_roadmap.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **Wave** | Одна волна rollout: ограниченный набор хостов/сервисов/шаблонов с проверкой после изменения. | [Implementation Playbook](16_implementation_playbook.md), [Roadmap](07_implementation_roadmap.md) |
 | **Phase gate** | Контрольная точка между фазами внедрения: что принято, что измерено, что нельзя тащить дальше. | [Implementation Playbook](16_implementation_playbook.md), [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/phase-gates.md) |
-| **Handover** | Передача мониторинга в штатную эксплуатацию: роли, runbooks, dashboards, процессы, ownership. | [Implementation Playbook](16_implementation_playbook.md), [Roadmap](07_implementation_roadmap.md) |
+| **Передача в эксплуатацию** (Handover) | Передача мониторинга в штатную эксплуатацию: роли, runbooks, dashboards, процессы, ответственность. | [Implementation Playbook](16_implementation_playbook.md), [Roadmap](07_implementation_roadmap.md) |
 | **ADR** | Architecture Decision Record: запись архитектурного решения, вариантов, последствий и критериев пересмотра. | [Implementation Playbook](16_implementation_playbook.md), [examples/decisions](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/decisions/README.md) |
 | **Decision log** | Журнал решений, помогающий видеть, какие ADR предложены, приняты и когда пересматриваются. | [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/decision-log.md), [Implementation Playbook](16_implementation_playbook.md) |
 | **RACI** | Матрица ответственности: Responsible, Accountable, Consulted, Informed. | [Implementation Playbook](16_implementation_playbook.md), [examples/project](https://github.com/slowdownyw/zabbix-enterprise-guide/blob/main/examples/project/raci-matrix.md) |
