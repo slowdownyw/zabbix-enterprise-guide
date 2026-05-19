@@ -34,8 +34,8 @@
 | Цель | Инструмент | Где взять | Что выдаёт |
 |---|---|---|---|
 | **AD инвентарь** | **ADRecon** | https://github.com/adrecon/ADRecon | Excel-отчёт со всеми OU, computers, users, GPO, trusts, sessions. Запускается с любого доменного компьютера |
-| **VMware инвентарь** | **RVTools** | https://www.robware.net/rvtools/ | Standalone .exe, читает vCenter, выдаёт Excel со всеми VM, дисками, снапшотами, сетями. Популярный инструмент VMware-инженеров |
-| **Hyper-V инвентарь** | **Get-HyperVInventory** | https://github.com/dfinke/HyperVInventory | PowerShell-скрипт, выдаёт HTML-отчёт |
+| **VMware инвентарь** | **RVTools** | https://www.dell.com/support/kbdoc/en-us/000196737/rvtools | Standalone .exe, читает vCenter, выдаёт Excel со всеми VM, дисками, снапшотами, сетями. Популярный инструмент VMware-инженеров |
+| **Hyper-V инвентарь** | **Hyper-V PowerShell (`Get-VM`)** | https://learn.microsoft.com/en-us/powershell/module/hyper-v/get-vm | Штатный PowerShell-модуль Hyper-V: собрать VM, состояния, хосты, экспортировать в CSV/HTML |
 | **Zabbix аудит** | **zabbix-cli** | https://github.com/unioslo/zabbix-cli | CLI-обёртка над API, экспорт хостов/шаблонов/триггеров одной командой |
 | **Сетевая discovery** | **LibreNMS** | https://www.librenms.org/ | Ставится рядом с Zabbix, сам находит SNMP-устройства через CDP/LLDP — на выходе карта сети за день |
 | **Бэкап конфигов сети** | **Oxidized** | https://github.com/ytti/oxidized | Деплоится в докер, забирает конфиги Cisco/Eltex по SSH, кладёт в Git. Сам по себе — инвентарь сети |
@@ -70,13 +70,13 @@
 | **ADRecon** (главный инструмент) | https://github.com/adrecon/ADRecon |
 | **PingCastle** (аудит здоровья AD) | https://www.pingcastle.com/ |
 | Microsoft AD PowerShell module docs | https://learn.microsoft.com/en-us/powershell/module/activedirectory/ |
-| **BloodHound** (графовый анализ AD — больше для ИБ, но полезен) | https://github.com/BloodHoundAD/BloodHound |
+| **BloodHound** (графовый анализ AD — больше для ИБ, но полезен) | https://github.com/SpecterOps/BloodHound |
 
 ### VMware / гипервизоры
 
 | Что | Ссылка |
 |---|---|
-| **RVTools** | https://www.robware.net/rvtools/ |
+| **RVTools** | https://www.dell.com/support/kbdoc/en-us/000196737/rvtools |
 | **govc** (Linux CLI) | https://github.com/vmware/govmomi/tree/main/govc |
 | **PowerCLI** (Windows) | https://developer.vmware.com/powercli |
 | **vSphere SDK для Python** | https://github.com/vmware/pyvmomi |
@@ -150,10 +150,10 @@
 
 | Шаблон | Где |
 |---|---|
-| **NIST IR 8011** Asset Management шаблон | https://csrc.nist.gov/pubs/ir/8011/final |
+| **NIST IR 8011 v1** Asset Management шаблон | https://csrc.nist.gov/pubs/ir/8011/v1/final |
 | Atlassian **Confluence Templates** — IT Service Catalog, Incident Postmortem, Project Poster | https://www.atlassian.com/software/confluence/templates |
 | **PagerDuty Incident Response docs** (открытые) | https://response.pagerduty.com/ — runbooks, severity levels, on-call всё описано |
-| **Google SRE Postmortem template** | https://sre.google/sre-book/postmortem/ |
+| **Google SRE Postmortem Culture** | https://sre.google/sre-book/postmortem-culture/ |
 
 ### Service catalog
 
@@ -975,7 +975,7 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 Для PostgreSQL — **TimescaleDB** или нативное partitioning:
 
-- https://www.zabbix.com/documentation/current/en/manual/appendix/install/db_partitioning
+- https://www.zabbix.com/documentation/current/en/manual/appendix/install/timescaledb
 - Готовые скрипты для PG партиционирования: поиск по запросу "zabbix postgresql partitioning script" даёт несколько хороших вариантов на GitHub
 
 После партиционирования:
@@ -1288,7 +1288,7 @@ Runbook: https://wiki.plant.local/runbooks/1c-erp-web-down
 
 ### Webhook на стороне Zabbix
 
-В Zabbix 5.0+ есть полноценный JavaScript webhook media type (**⚠ Версия Zabbix: 5.0+**). Вместо классического email:
+В Zabbix 6.0/7.0 JavaScript webhook media type — штатный способ интеграции с ITSM и чатами. Вместо классического email:
 
 ```javascript
 // Скелет webhook'а
