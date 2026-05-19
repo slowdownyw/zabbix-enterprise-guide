@@ -1,73 +1,74 @@
-# Contributing
+# Как вносить вклад
 
-Contributions are welcome, especially corrections, validated examples, and production lessons learned.
+PR и Issues приветствуются — особенно правки фактических ошибок, валидированные примеры и уроки из реальной эксплуатации.
 
-## What this project accepts
+## Что принимается
 
-Good contributions:
+Хорошие правки:
 
-- factual corrections with sources;
-- validated Zabbix trigger expressions;
-- sanitized UserParameter examples;
-- LLD JSON examples;
-- runbook patterns;
-- dashboard/reporting patterns;
-- clarifications and typo fixes.
+- фактические исправления со ссылками на источники;
+- валидированные trigger expressions для Zabbix;
+- обезличенные примеры UserParameter;
+- примеры JSON для LLD;
+- паттерны runbook;
+- паттерны дашбордов и отчётности;
+- уточнения формулировок и опечатки.
 
-Not accepted:
+Не принимается:
 
-- secrets, tokens, passwords, private URLs, or real customer identifiers;
-- screenshots with internal hostnames/IPs unless sanitized;
-- vendor marketing copy;
-- import-ready templates presented as production-safe without validation notes.
+- секреты, токены, пароли, приватные URL и реальные идентификаторы клиентов;
+- скриншоты с внутренними hostname/IP без обезличивания;
+- маркетинговые материалы вендоров;
+- готовые к импорту шаблоны, поданные как production-safe без указания контекста и ограничений валидации.
 
-## Validation status
+## Статусы валидации
 
-Use the same status language as the book:
+Используйте ту же шкалу статусов, что и в книге:
 
-| Status | Meaning |
+| Статус | Значение |
 |---|---|
-| 🟢 Conceptually stable | Design idea is stable and generally applicable |
-| 🟡 Design draft | Pattern is plausible but requires validation |
-| 🔴 Requirements only | Monitoring requirement, not implementation |
-| ⚫ Lab-tested | Tested in a lab; include Zabbix version and environment |
-| 🟣 Production-tested | Tested in production; include context and limitations |
+| 🟢 Conceptually stable | Концепция устойчива и применима в общем случае |
+| 🟡 Design draft | Подход правдоподобен, но требует валидации |
+| 🔴 Requirements only | Требования к мониторингу, а не реализация |
+| ⚫ Lab-tested | Проверено в лаборатории; укажите версию Zabbix и окружение |
+| 🟣 Production-tested | Проверено в продакшне; укажите контекст и ограничения |
 
-When submitting examples, state the validation status explicitly.
+При отправке примера явно указывайте статус валидации.
 
-## Pull request checklist
+## Чек-лист перед PR
 
-Before opening a PR:
+Перед открытием Pull Request:
 
-- [ ] `mkdocs build --strict` passes locally;
-- [ ] no secrets or internal identifiers are included;
-- [ ] examples state Zabbix version and validation status;
-- [ ] trigger expressions use the modern `/host/key` syntax where applicable;
-- [ ] new recommendations include rationale and limitations;
-- [ ] links point to stable official documentation when possible.
+- [ ] `mkdocs build --strict` проходит локально;
+- [ ] нет секретов и внутренних идентификаторов;
+- [ ] для примеров указана версия Zabbix и статус валидации;
+- [ ] trigger expressions используют современный синтаксис `/host/key`, где это применимо;
+- [ ] новые рекомендации сопровождаются обоснованием и ограничениями;
+- [ ] ссылки ведут на стабильные разделы официальной документации.
 
-## Style
+## Стиль
 
-- Write clearly and operationally.
-- Prefer tables/checklists for procedures.
-- Separate concept, requirement, and implementation.
-- Do not mark anything as production-tested without context.
-- Use `example.local`, `example.com`, and RFC 5737 documentation IP ranges (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`) for examples.
+- Пишите ясно и операционно.
+- Для процедур предпочтительны таблицы и чек-листы.
+- Разделяйте концепцию, требование и реализацию.
+- Не помечайте материал как production-tested без указания контекста.
+- В примерах используйте `example.local`, `example.com` и диапазоны IP из RFC 5737 (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`).
+- Язык документации — русский; английский только для устоявшихся терминов индустрии и официальных имён интерфейса Zabbix (см. [глоссарий](docs/glossary.md)).
 
-## Security and sanitization
+## Безопасность и обезличивание
 
-Before sharing artifacts:
+Перед публикацией артефактов:
 
-- rotate any token that might have been exposed;
-- remove API keys, bearer tokens, passwords, cookies, session IDs;
-- remove real customer names and personal data;
-- replace internal domains with `example.local` or `example.com`;
-- replace IP addresses with documentation ranges unless the network is intentionally public.
+- ротируйте любой токен, который мог быть раскрыт;
+- удалите API-ключи, bearer-токены, пароли, cookies, session ID;
+- удалите реальные имена клиентов и персональные данные;
+- замените внутренние домены на `example.local` или `example.com`;
+- замените IP-адреса на диапазоны из RFC 5737, если сеть не задумана как публичная.
 
 ## Issues
 
-Use issue templates:
+Используйте шаблоны:
 
-- **Factual error** — incorrect or outdated statement;
-- **Template validation result** — lab/prod result for triggers, UserParameters, or LLD;
-- **Documentation improvement** — clarity, structure, missing topic.
+- **Factual error** — некорректное или устаревшее утверждение;
+- **Template validation result** — результат проверки в lab/prod для триггеров, UserParameter или LLD;
+- **Documentation improvement** — ясность, структура, запрос на новый раздел/главу.
