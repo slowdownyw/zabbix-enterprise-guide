@@ -33,6 +33,7 @@ theme:
     - content.code.annotate
     - content.tabs.link
     - content.action.edit
+    - navigation.footer
 
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -111,7 +112,6 @@ nav:
       - Многоуровневый дизайн: 05_layered_design.md
   - Архитектура и внедрение:
       - Слои и развёртывание: 06_architecture.md
-      - Implementation Playbook: 16_implementation_playbook.md   # ← поднять выше
       - Reference 90-day roadmap: 07_implementation_roadmap.md
       - GitOps для Zabbix: 08_gitops_for_zabbix.md
   - Эксплуатация:
@@ -123,6 +123,7 @@ nav:
       - Требования к шаблонам: 13_template_requirements.md
   - Финал:
       - Anti-patterns: 15_antipatterns.md
+      - Implementation Playbook: 16_implementation_playbook.md
 
 extra:
   social:
