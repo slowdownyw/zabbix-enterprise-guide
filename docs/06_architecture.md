@@ -94,7 +94,7 @@
 
 **Zabbix Server HA:**
 
-Начиная с Zabbix 6.x есть native HA для Zabbix Server (active/standby). Он защищает процесс сервера, а не БД — это разные уровни. В схеме с Patroni: Patroni защищает PostgreSQL, Zabbix Server HA защищает server process. Для крупных инфраструктур имеет смысл совмещать оба.
+> **⚠ Версия Zabbix:** native HA для Zabbix Server (active/standby) появился в 6.x. Он защищает процесс сервера, а не БД — это разные уровни. В схеме с Patroni: Patroni защищает PostgreSQL, Zabbix Server HA защищает server process. Для крупных инфраструктур имеет смысл совмещать оба.
 
 **Postgres (reference design при наличии компетенций):**
 

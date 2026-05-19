@@ -162,7 +162,7 @@ terraform apply  # применяет
 **Что это даёт:** ближе к полноценному IaC. State в terraform.tfstate, `terraform plan` как diff перед apply.
 
 **Проблемы:**
-- Provider написан комьюнити, не официальный Zabbix
+- Provider написан сообществом, не официальный Zabbix
 - Поддерживается неравномерно, не все объекты покрыты
 - `terraform.tfstate` надо хранить удалённо (S3/Consul), это инфраструктура
 - Если кто-то меняет в UI — state расходится с реальностью, нужен `terraform refresh`
@@ -271,7 +271,7 @@ if diff:
 
 ---
 
-## Secret handling — что не кладут в git
+## Управление секретами — что не кладут в git
 
 Ни в каком из уровней GitOps следующее не хранится в plain git:
 

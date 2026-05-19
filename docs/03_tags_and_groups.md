@@ -461,7 +461,7 @@ severity >= Average
 → Telegram
 ```
 
-## 6. LLD: автоматическое тегирование айтемов и триггеров
+## 6. LLD: автоматическое тегирование элементов данных и триггеров
 
 Важно!
 
@@ -548,7 +548,7 @@ component=filesystem
 
 В current API action operation есть операции `add host tags` и `remove host tags`, то есть при discovery/autoregistration можно автоматизировать и присвоение host tags. ([Zabbix][3])
 
-> **Версионная оговорка:** операции `add/remove host tags` в autoregistration actions отсутствуют в Zabbix **6.0 LTS**. Они появились в более новых версиях ветки 6.x/7.x. Если вы на 6.0 LTS — назначение host tags через autoregistration требует API/скрипта или обновления до версии с поддержкой этих операций.
+> **⚠ Версия Zabbix:** операции `add/remove host tags` в autoregistration actions отсутствуют в Zabbix **6.0 LTS**. Они появились в более новых версиях ветки 6.x/7.x. Если вы на 6.0 LTS — назначение host tags через autoregistration требует API/скрипта или обновления до версии с поддержкой этих операций.
 
 На агенте:
 
