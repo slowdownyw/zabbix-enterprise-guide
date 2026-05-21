@@ -60,7 +60,7 @@ git push
 
 **Что это не даёт:** запрета на прямые изменения в UI. Дисциплина — организационная, не техническая.
 
-> ⚠️ Без нормализации scheduled auto-export превращает Git в шум. Экспортированный YAML может содержать runtime-поля, изменяющиеся при каждом запросе (lastaccess, triggerid ordering и т.д.). Рекомендации: сортировать поля, убирать нестабильные runtime-значения, один объект — один файл со стабильным именем, использовать `git diff --stat` для фильтрации незначительных изменений.
+> ⚠️ Без нормализации scheduled auto-export превращает Git в шум. Экспортированный YAML может содержать поля runtime, изменяющиеся при каждом запросе (lastaccess, triggerid ordering и т.д.). Рекомендации: сортировать поля, убирать нестабильные значения runtime, один объект — один файл со стабильным именем, использовать `git diff --stat` для фильтрации незначительных изменений.
 
 ---
 
@@ -209,7 +209,7 @@ apply:
 - **Actions и escalation rules** — через `action.get`, не входят в configuration.export
 - **Authentication settings** (LDAP, SAML, MFA) — только через UI или отдельные API
 - **Global macros** — через `usermacro.get` с `globalmacro=true`
-- **Media и уведомления** — отчасти в export, но credentials/tokens — нет (см. secret handling ниже)
+- **Media и уведомления** — отчасти в export, но credentials/tokens — нет (см. управление секретами ниже)
 
 Для **контролируемого применения** используй [`configuration.importcompare`](https://www.zabbix.com/documentation/current/en/manual/api/reference/configuration/importcompare) — API-метод, возвращающий diff между файлом и текущим состоянием без применения. Это аналог `terraform plan` для Zabbix-конфигурации.
 
@@ -233,7 +233,7 @@ if diff:
 
 **Что это даёт:** если кто-то поменял в UI напрямую — через час приходит алерт. Менеджер видит. Это организационный контроль через мониторинг.
 
-**Кстати:** для контроля UI-изменений в реальном времени надёжнее периодически опрашивать [`auditlog.get`](https://www.zabbix.com/documentation/current/en/manual/api/reference/auditlog/get) через внешний скрипт и слать события в канал. Zabbix action на `EVENT.SOURCE=5` (internal event) технически возможен, но audit-события не всегда маппятся на действия достаточно надёжно — проверяйте поведение на вашей версии.
+**Кстати:** для контроля UI-изменений в реальном времени надёжнее периодически опрашивать [`auditlog.get`](https://www.zabbix.com/documentation/current/en/manual/api/reference/auditlog/get) через внешний скрипт и слать события в канал. Zabbix action на `EVENT.SOURCE=5` (internal event) технически возможен, но события аудита не всегда маппятся на действия достаточно надёжно — проверяйте поведение на вашей версии.
 
 ---
 
@@ -267,7 +267,7 @@ if diff:
 - Drift detection alert
 - Постепенно — всё через Ansible, ничего напрямую в UI
 
-**Почему не Terraform сейчас:** provider сырой для легаси-инсталляций, риски выше пользы. Ansible более зрелый для этой задачи.
+**Почему не Terraform сейчас:** provider сырой для инсталляций legacy, риски выше пользы. Ansible более зрелый для этой задачи.
 
 ---
 
