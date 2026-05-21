@@ -1,5 +1,5 @@
 site_name: Zabbix Enterprise Guide
-site_description: Книга-руководство по зрелому мониторингу на Zabbix для крупных инфраструктур
+site_description: "Русскоязычная книга о зрелом мониторинге на Zabbix для крупной инфраструктуры: сервисная модель, severity, теги, LLD, runbooks, SLA, дашборды и эксплуатация."
 site_author: slowdownyw
 site_url: https://slowdownyw.github.io/zabbix-enterprise-guide/
 

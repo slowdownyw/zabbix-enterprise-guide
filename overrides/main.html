@@ -3,10 +3,15 @@
 {% block extrahead %}
   {{ super() }}
   {% set author_name = config.site_author or "slowdownyw" %}
+  {% set book_subtitle = "Практическое руководство по зрелому мониторингу крупной инфраструктуры" %}
+  {% set homepage_title = "Zabbix Enterprise Guide — практическое руководство по зрелому мониторингу крупной инфраструктуры" %}
   {% if page %}
     {% set page_title = page.meta.title or page.title or config.site_name %}
     {% set page_description = page.meta.description or config.site_description %}
     {% set is_homepage = page.url == "" or page.url == "index.html" %}
+    {% if is_homepage %}
+      {% set page_title = homepage_title %}
+    {% endif %}
     {% if page.canonical_url %}
       {% set page_url = page.canonical_url %}
     {% elif page.url %}
@@ -38,6 +43,7 @@
     "@context": "https://schema.org",
     "@type": "Book",
     "name": {{ config.site_name|tojson }},
+    "alternateName": {{ book_subtitle|tojson }},
     "description": {{ page_description|tojson }},
     "url": {{ page_url|tojson }},
     "inLanguage": "ru",
