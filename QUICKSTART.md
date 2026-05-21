@@ -103,9 +103,9 @@ Workflow запустится автоматически на первый push.
 
 ## Что добавлено в v0.6
 
-### Iteration 1 — Implementation Playbook Foundation
+### Iteration 1 — Руководство по внедрению
 
-- `docs/16_implementation_playbook.md` — операционный playbook внедрения: роли, фазы, decision points, sizing gate, phase gates, acceptance checklist.
+- `docs/16_implementation_playbook.md` — операционное руководство по внедрению: роли, фазы, decision points, sizing gate, phase gates, acceptance checklist.
 - `examples/project/raci-matrix.md` — RACI-матрица ролей.
 - `examples/project/phase-gates.md` — gate criteria для Phase 0..5.
 - `examples/project/implementation-checklist.md` — пошаговый execution checklist.

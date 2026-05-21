@@ -28,7 +28,7 @@ description: "Русскоязычная книга о построении зр
 
 Дальше — по вкусу:
 
-- **Внедрение Zabbix с нуля или с легаси** → начните с [Implementation Playbook](16_implementation_playbook.md), затем используйте [reference 90-day roadmap](07_implementation_roadmap.md)
+- **Внедрение Zabbix с нуля или с легаси** → начните с [90-дневной дорожной карты внедрения](07_implementation_roadmap.md), затем используйте [руководство по внедрению](16_implementation_playbook.md)
 - **Архитектура и масштабирование** → [Слои и развёртывание](06_architecture.md)
 - **Эксплуатация уже работающего Zabbix** → [Эксплуатационная модель](12_operations.md) + [Runbooks](09_runbooks.md)
 - **Нужно проектировать или принимать шаблоны** → [Требования к шаблонам](13_template_requirements.md) с честным дисклеймером
@@ -76,8 +76,8 @@ description: "Русскоязычная книга о построении зр
 ### Часть II. Архитектура и внедрение
 
 - [Слои и развёртывание](06_architecture.md) · 🟡
-- [Implementation Playbook](16_implementation_playbook.md) · 🟡
-- [Reference 90-day roadmap внедрения](07_implementation_roadmap.md) · 🟡
+- [90-дневная дорожная карта внедрения](07_implementation_roadmap.md) · 🟡
+- [Руководство по внедрению](16_implementation_playbook.md) · 🟡
 - [GitOps для Zabbix](08_gitops_for_zabbix.md) · 🟢
 
 ### Часть III. Эксплуатация
@@ -91,9 +91,9 @@ description: "Русскоязычная книга о построении зр
 
 - [Требования к шаблонам](13_template_requirements.md) · 🔴
 
-### Финал
+### Завершение
 
-- [Anti-patterns](15_antipatterns.md) · 🟢
+- [Антипаттерны](15_antipatterns.md) · 🟢
 
 ---
 

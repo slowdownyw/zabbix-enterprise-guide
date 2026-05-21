@@ -384,7 +384,7 @@ send_email(to=cio_email, subject="ИТ-отчёт за май", attachment=pdf)
 
 ---
 
-## 15. Anti-patterns дашбордов
+## 15. Антипаттерны дашбордов
 
 Локальная сводка ошибок именно в дизайне дашбордов. Общие anti-patterns — в [главе 15](15_antipatterns.md).
 
@@ -466,4 +466,4 @@ send_email(to=cio_email, subject="ИТ-отчёт за май", attachment=pdf)
 - [Глава 3 — Теги и группы](03_tags_and_groups.md) — что и куда вешать
 - [Глава 5 — Многоуровневый дизайн](05_layered_design.md) — общая методика, на которой строятся дашборды
 - [Глава 10 — SLA](10_sla_service_catalog.md) — что считать в SLA-витринах
-- [Глава 15 — Anti-patterns](15_antipatterns.md) — общая сводка ошибок
+- [Глава 15 — Антипаттерны](15_antipatterns.md) — общая сводка ошибок

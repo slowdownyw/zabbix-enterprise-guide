@@ -110,7 +110,8 @@ nav:
       - Многоуровневый дизайн: 05_layered_design.md
   - Архитектура и внедрение:
       - Слои и развёртывание: 06_architecture.md
-      - Reference 90-day roadmap: 07_implementation_roadmap.md
+      - 90-дневная дорожная карта внедрения: 07_implementation_roadmap.md
+      - Руководство по внедрению: 16_implementation_playbook.md
       - GitOps для Zabbix: 08_gitops_for_zabbix.md
   - Эксплуатация:
       - Runbooks: 09_runbooks.md
@@ -119,9 +120,8 @@ nav:
       - Эксплуатационная модель: 12_operations.md
   - Шаблоны:
       - Требования к шаблонам: 13_template_requirements.md
-  - Финал:
-      - Anti-patterns: 15_antipatterns.md
-      - Implementation Playbook: 16_implementation_playbook.md
+  - Завершение:
+      - Антипаттерны: 15_antipatterns.md
   - Справка:
       - Оглавление: contents.md
       - Глоссарий: glossary.md

@@ -200,7 +200,7 @@
 - [Глава 03 — Теги и группы](../../docs/03_tags_and_groups.md)
 - [Глава 05 — Многоуровневый дизайн](../../docs/05_layered_design.md)
 - [Глава 06 — Архитектура](../../docs/06_architecture.md)
-- [Глава 16 — Implementation Playbook](../../docs/16_implementation_playbook.md)
+- [Глава 16 — Руководство по внедрению](../../docs/16_implementation_playbook.md)
 
 ---
 

@@ -22,8 +22,8 @@ examples/project/
 
 ## Связанные главы
 
-- `docs/16_implementation_playbook.md` — основной playbook.
-- `docs/07_implementation_roadmap.md` — reference 90-day roadmap.
+- `docs/16_implementation_playbook.md` — основное руководство по внедрению.
+- `docs/07_implementation_roadmap.md` — 90-дневная дорожная карта внедрения.
 - `docs/05_layered_design.md` — методика layered design.
 - `docs/11_dashboards_reporting.md` — dashboards/reporting design.
 - `docs/12_operations.md` — эксплуатационные процедуры.

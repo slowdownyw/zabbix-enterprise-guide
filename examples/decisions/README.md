@@ -228,7 +228,7 @@ ADR-020: Владение backlog'ом после проекта
 | [Глава 08 — GitOps](../../docs/08_gitops_for_zabbix.md) | ADR для change control и drift detection |
 | [Глава 10 — SLA](../../docs/10_sla_service_catalog.md) | ADR для scope SLA и границ отчётности |
 | [Глава 11 — Дашборды](../../docs/11_dashboards_reporting.md) | ADR для стратегии платформы дашбордов |
-| [Глава 16 — Implementation Playbook](../../docs/16_implementation_playbook.md) | Процесс ADR и phase gates |
+| [Глава 16 — Руководство по внедрению](../../docs/16_implementation_playbook.md) | Процесс ADR и phase gates |
 
 ---
 

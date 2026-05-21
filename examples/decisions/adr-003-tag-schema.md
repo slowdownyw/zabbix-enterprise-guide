@@ -339,7 +339,7 @@ LLD prototype без тегов component/scope
 - [Глава 03 — Теги и группы](../../docs/03_tags_and_groups.md)
 - [Глава 05 — Многоуровневый дизайн](../../docs/05_layered_design.md)
 - [Глава 11 — Дашборды и отчётность](../../docs/11_dashboards_reporting.md)
-- [Глава 16 — Implementation Playbook](../../docs/16_implementation_playbook.md)
+- [Глава 16 — Руководство по внедрению](../../docs/16_implementation_playbook.md)
 
 ---
 

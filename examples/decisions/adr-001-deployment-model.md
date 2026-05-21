@@ -304,7 +304,7 @@ owner=monitoring
 
 - [Глава 06 — Архитектура](../../docs/06_architecture.md)
 - [Глава 12 — Эксплуатация](../../docs/12_operations.md)
-- [Глава 16 — Implementation Playbook](../../docs/16_implementation_playbook.md)
+- [Глава 16 — Руководство по внедрению](../../docs/16_implementation_playbook.md)
 
 ---
 

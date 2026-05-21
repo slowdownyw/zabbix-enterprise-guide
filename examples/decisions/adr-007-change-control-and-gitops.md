@@ -356,4 +356,4 @@ UI-only изменения допустимы для:
 
 - [Глава 08 — GitOps для Zabbix](../../docs/08_gitops_for_zabbix.md)
 - [Глава 13 — Требования к шаблонам](../../docs/13_template_requirements.md)
-- [Глава 16 — Implementation Playbook](../../docs/16_implementation_playbook.md)
+- [Глава 16 — Руководство по внедрению](../../docs/16_implementation_playbook.md)
