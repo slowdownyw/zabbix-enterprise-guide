@@ -102,8 +102,6 @@ plugins:
 nav:
   - Главная: index.md
   - Манифест: 00_manifesto.md
-  - Оглавление: contents.md
-  - Глоссарий: glossary.md
   - Принципы и дизайн:
       - Сервис, а не хост: 01_service_not_host.md
       - Severity = действие: 02_severity_model.md
@@ -124,6 +122,9 @@ nav:
   - Финал:
       - Anti-patterns: 15_antipatterns.md
       - Implementation Playbook: 16_implementation_playbook.md
+  - Справка:
+      - Оглавление: contents.md
+      - Глоссарий: glossary.md
 
 extra:
   social:
