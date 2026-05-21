@@ -1,3 +1,8 @@
+---
+title: "LLD и прототипы"
+description: "Раздел объясняет Low-Level Discovery в Zabbix: как LLD находит сущности внутри хоста и создаёт items, triggers и graphs через управляемые прототипы."
+---
+
 !!! info "🟢 Статус: Conceptually stable · v0.1"
     Концепция устойчива, проверена опытом, литературой и практикой.
 

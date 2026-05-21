@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://slowdownyw.github.io/zabbix-enterprise-guide/sitemap.xml

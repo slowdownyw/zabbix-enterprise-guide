@@ -2,5 +2,73 @@
 
 {% block extrahead %}
   {{ super() }}
+  {% set author_name = config.site_author or "slowdownyw" %}
+  {% if page %}
+    {% set page_title = page.meta.title or page.title or config.site_name %}
+    {% set page_description = page.meta.description or config.site_description %}
+    {% set is_homepage = page.url == "" or page.url == "index.html" %}
+    {% if page.canonical_url %}
+      {% set page_url = page.canonical_url %}
+    {% elif page.url %}
+      {% set page_url = config.site_url ~ page.url %}
+    {% else %}
+      {% set page_url = config.site_url %}
+    {% endif %}
+  {% else %}
+    {% set page_title = config.site_name %}
+    {% set page_description = config.site_description %}
+    {% set is_homepage = false %}
+    {% set page_url = config.site_url %}
+  {% endif %}
   <meta name="google-site-verification" content="zEBdRYJEvCO7GEqkgdO6l0LbEcmBfOVPYjhULjOqSPQ" />
+  {% if not page or not page.meta.description %}
+  <meta name="description" content="{{ page_description|e }}" />
+  {% endif %}
+  <meta property="og:type" content="{% if is_homepage %}website{% else %}article{% endif %}" />
+  <meta property="og:site_name" content="{{ config.site_name|e }}" />
+  <meta property="og:title" content="{{ page_title|e }}" />
+  <meta property="og:description" content="{{ page_description|e }}" />
+  <meta property="og:url" content="{{ page_url|e }}" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{{ page_title|e }}" />
+  <meta name="twitter:description" content="{{ page_description|e }}" />
+  <script type="application/ld+json">
+  {% if is_homepage %}
+  {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "name": {{ config.site_name|tojson }},
+    "description": {{ page_description|tojson }},
+    "url": {{ page_url|tojson }},
+    "inLanguage": "ru",
+    "author": {
+      "@type": "Person",
+      "name": {{ author_name|tojson }}
+    }
+  }
+  {% else %}
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": {{ page_title|tojson }},
+    "description": {{ page_description|tojson }},
+    "url": {{ page_url|tojson }},
+    "inLanguage": "ru",
+    "author": {
+      "@type": "Person",
+      "name": {{ author_name|tojson }}
+    },
+    "isPartOf": {
+      "@type": "Book",
+      "name": {{ config.site_name|tojson }},
+      "url": {{ config.site_url|tojson }},
+      "inLanguage": "ru",
+      "author": {
+        "@type": "Person",
+        "name": {{ author_name|tojson }}
+      }
+    }
+  }
+  {% endif %}
+  </script>
 {% endblock %}
